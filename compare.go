@@ -123,7 +123,9 @@ func compare(cli *posterrCli) error {
 			s.UpdateMessagef("%s: Waiting for other threads...", imdbId)
 			mutex.Lock()
 			s.UpdateMessagef("%s: Writing comparison to disk...", imdbId)
-			b.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td><img width=300 src=\"file://%s\"></td><td><img width=300 src=\"file://%s\"></td></tr>\n", imdbId, plexPath, metadbPath)))
+			if _, err = b.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td><img width=300 src=\"file://%s\"></td><td><img width=300 src=\"file://%s\"></td></tr>\n", imdbId, plexPath, metadbPath))); err != nil {
+				s.UpdateMessagef("Errored.")
+			}
 			mutex.Unlock()
 		}
 
