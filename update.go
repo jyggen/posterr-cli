@@ -46,6 +46,38 @@ func update(cli *posterrCli) error {
 				continue
 			}
 
+			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbId)
+			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
+
+			if ctx.Err() != nil {
+				s.ErrorWithMessage("Cancelled.")
+				return
+			}
+
+			if err != nil {
+				s.UpdateMessagef("Errored.")
+				continue
+			}
+
+			s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
+			metadbHash, err := hashFile(metadbPath)
+
+			if err != nil {
+				s.UpdateMessagef("Errored.")
+				continue
+			}
+
+			plexHash, err := hashFile(plexPath)
+
+			if err != nil {
+				s.UpdateMessagef("Errored.")
+				continue
+			}
+
+			if plexHash == metadbHash {
+				continue
+			}
+
 			s.UpdateMessagef("%s: Uploading poster to Plex...", imdbId)
 			f, err := os.Open(metadbPath)
 

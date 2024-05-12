@@ -109,7 +109,7 @@ func compare(cli *posterrCli) error {
 				continue
 			}
 
-			plexHash, err := hashFile(metadbPath)
+			plexHash, err := hashFile(plexPath)
 
 			if err != nil {
 				s.UpdateMessagef("Errored.")
