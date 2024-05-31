@@ -54,12 +54,9 @@ OuterLoop:
 			}
 
 			language := l.Language
-			overrideIndex := slices.IndexFunc(m.Preferences.Setting, func(setting plex.Setting) bool {
-				return setting.ID == "languageOverride"
-			})
 
-			if overrideIndex != -1 && m.Preferences.Setting[overrideIndex].Value != "" {
-				language = m.Preferences.Setting[overrideIndex].Value
+			if m.LanguageOverride != "" {
+				language = m.LanguageOverride
 			}
 
 			languageParts := strings.SplitN(language, "-", 2)

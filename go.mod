@@ -6,7 +6,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/alecthomas/kong v0.8.1
 	github.com/chelnak/ysmrr v0.3.1-0.20240117091850-733674d95418
-	github.com/jyggen/go-plex-client v0.0.0-20240222152736-29e0b439edc0
+	github.com/jyggen/go-plex-client v0.0.0-20240531124134-b23c71358946
 	github.com/mattn/go-colorable v0.1.13
 )
 
