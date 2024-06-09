@@ -24,6 +24,10 @@ func update(cli *posterrCli) error {
 
 	connection.HTTPClient = *client
 
+	if _, err = connection.Test(); err != nil {
+		return err
+	}
+
 	withThreads(func(ctx context.Context, queue chan plex.Metadata) {
 		produceMoviesMetadata(ctx, connection, queue)
 	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) {
