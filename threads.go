@@ -4,16 +4,16 @@ import (
 	"context"
 	"github.com/chelnak/ysmrr"
 	"github.com/mattn/go-colorable"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"os"
 	"os/signal"
 	"runtime"
-	"sync"
 	"syscall"
 )
 
-type consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner)
-type producerFunc[T any] func(ctx context.Context, queue chan T)
+type consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner) error
+type producerFunc[T any] func(ctx context.Context, queue chan T) error
 
 func getSpinnerWriter() io.Writer {
 	if runtime.GOOS == "windows" {
@@ -23,23 +23,10 @@ func getSpinnerWriter() io.Writer {
 	}
 }
 
-func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], threadCount int) {
+func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], threadCount int) error {
 	queue := make(chan T, threadCount)
 	sm := ysmrr.NewSpinnerManager(ysmrr.WithWriter(getSpinnerWriter()))
 	ctx, cancel := context.WithCancel(context.Background())
-
-	var wg sync.WaitGroup
-
-	for i := 1; i <= threadCount; i++ {
-		s := sm.AddSpinner("Waiting...")
-
-		go func() {
-			defer wg.Done()
-			consumer(ctx, queue, s)
-		}()
-	}
-
-	wg.Add(threadCount)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -48,13 +35,34 @@ func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], thre
 		cancel()
 	}()
 
+	wg, ctx := errgroup.WithContext(ctx)
+
+	for i := 1; i <= threadCount; i++ {
+		s := sm.AddSpinner("Waiting...")
+
+		wg.Go(func() error {
+			err := consumer(ctx, queue, s)
+
+			if err == nil {
+				s.CompleteWithMessage("Done.")
+			} else {
+				s.ErrorWithMessage("Errored.")
+			}
+
+			return err
+		})
+	}
+
 	sm.Start()
+	wg.Go(func() error {
+		defer close(queue)
 
-	go func() {
-		producer(ctx, queue)
-		close(queue)
-	}()
+		return producer(ctx, queue)
+	})
 
-	wg.Wait()
+	err := wg.Wait()
+
 	sm.Stop()
+
+	return err
 }

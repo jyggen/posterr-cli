@@ -24,13 +24,9 @@ func update(cli *posterrCli) error {
 
 	connection.HTTPClient = *client
 
-	if _, err = connection.Test(); err != nil {
-		return err
-	}
-
-	withThreads(func(ctx context.Context, queue chan plex.Metadata) {
-		produceMoviesMetadata(ctx, connection, queue)
-	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) {
+	return withThreads(func(ctx context.Context, queue chan plex.Metadata) error {
+		return produceMoviesMetadata(ctx, connection, queue)
+	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) error {
 		for job := range queue {
 			imdbId := getImdbId(job)
 
@@ -41,41 +37,35 @@ func update(cli *posterrCli) error {
 			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbId, s)
 
 			if ctx.Err() != nil {
-				s.ErrorWithMessage("Cancelled.")
-				return
+				return nil
 			}
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbId)
 			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
 
 			if ctx.Err() != nil {
-				s.ErrorWithMessage("Cancelled.")
-				return
+				return nil
 			}
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
 			metadbHash, err := hashFile(metadbPath)
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			plexHash, err := hashFile(plexPath)
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			if plexHash == metadbHash {
@@ -86,17 +76,14 @@ func update(cli *posterrCli) error {
 			f, err := os.Open(metadbPath)
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			if err = connection.UploadPoster(job.RatingKey, f); err != nil {
-				s.UpdateMessagef("Errored.")
+				return err
 			}
 		}
 
-		s.CompleteWithMessage("Done.")
+		return nil
 	}, cli.Threads)
-
-	return nil
 }

@@ -71,9 +71,9 @@ func compare(cli *posterrCli) error {
 
 	var mutex sync.Mutex
 
-	withThreads(func(ctx context.Context, queue chan plex.Metadata) {
-		produceMoviesMetadata(ctx, connection, queue)
-	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) {
+	err = withThreads(func(ctx context.Context, queue chan plex.Metadata) error {
+		return produceMoviesMetadata(ctx, connection, queue)
+	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) error {
 		for job := range queue {
 			imdbId := getImdbId(job)
 
@@ -84,36 +84,35 @@ func compare(cli *posterrCli) error {
 			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbId, s)
 
 			if ctx.Err() != nil {
-				s.ErrorWithMessage("Cancelled.")
-				return
+				return nil
 			}
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbId)
 			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
 
+			if ctx.Err() != nil {
+				return nil
+			}
+
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
 			metadbHash, err := hashFile(metadbPath)
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			plexHash, err := hashFile(plexPath)
 
 			if err != nil {
-				s.UpdateMessagef("Errored.")
-				continue
+				return err
 			}
 
 			if plexHash == metadbHash {
@@ -124,15 +123,19 @@ func compare(cli *posterrCli) error {
 			mutex.Lock()
 			s.UpdateMessagef("%s: Writing comparison to disk...", imdbId)
 			if _, err = b.Write([]byte(fmt.Sprintf("<tr><td>%s</td><td><img width=300 src=\"file://%s\"></td><td><img width=300 src=\"file://%s\"></td></tr>\n", imdbId, plexPath, metadbPath))); err != nil {
-				s.UpdateMessagef("Errored.")
+				return err
 			}
 			mutex.Unlock()
 		}
 
-		s.CompleteWithMessage("Done.")
+		return nil
 	}, cli.Threads)
 
-	_, err = b.Write([]byte("</tbody></table></main></body></html>"))
+	_, err2 := b.Write([]byte("</tbody></table></main></body></html>"))
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return err2
 }

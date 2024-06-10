@@ -67,7 +67,6 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 			s.UpdateMessagef("%s: Waiting for MetaDB's servers to catch up...", imdbId)
 			time.Sleep(sleepTime)
 		case http.StatusNotFound:
-			s.UpdateMessagef("%s: Movie not found.", imdbId)
 			return "", errors.New("not found")
 		case http.StatusSeeOther:
 			s.UpdateMessagef("%s: Writing poster to disk...", imdbId)
@@ -75,7 +74,6 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 				return client.Get(u)
 			}, cacheDir, res.Header.Get("Location"))
 		default:
-			s.UpdateMessagef("%s: MetaDB returned an error.", imdbId)
 			return "", fmt.Errorf("unknown error: %v", res.StatusCode)
 		}
 	}

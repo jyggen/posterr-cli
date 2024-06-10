@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/jyggen/go-plex-client"
-	"log"
 	"net/http"
 	"path"
 	"slices"
@@ -28,14 +27,17 @@ func getImdbId(metadata plex.Metadata) string {
 	return metadata.AltGUIDs[idx].ID[7:]
 }
 
-func produceMoviesMetadata(ctx context.Context, connection *plex.Plex, queue chan plex.Metadata) {
+func produceMoviesMetadata(ctx context.Context, connection *plex.Plex, queue chan plex.Metadata) error {
+	if _, err := connection.Test(); err != nil {
+		return err
+	}
+
 	libraries, err := connection.GetLibraries()
 
 	if err != nil {
-		return
+		return err
 	}
 
-OuterLoop:
 	for _, l := range libraries.MediaContainer.Directory {
 		if l.Type != "movie" {
 			continue
@@ -44,15 +46,10 @@ OuterLoop:
 		content, err := connection.GetLibraryContent(l.Key, "?includeGuids=1")
 
 		if err != nil {
-			log.Println(err)
-			continue
+			return err
 		}
 
 		for _, m := range content.MediaContainer.Metadata {
-			if ctx.Err() != nil {
-				break OuterLoop
-			}
-
 			language := l.Language
 
 			if m.LanguageOverride != "" {
@@ -65,7 +62,14 @@ OuterLoop:
 				continue
 			}
 
-			queue <- m
+			select {
+			case <-ctx.Done():
+				return nil
+			case queue <- m:
+				continue
+			}
 		}
 	}
+
+	return nil
 }

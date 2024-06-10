@@ -4,16 +4,18 @@ go 1.21.7
 
 require (
 	github.com/adrg/xdg v0.4.0
-	github.com/alecthomas/kong v0.8.1
-	github.com/chelnak/ysmrr v0.3.1-0.20240117091850-733674d95418
+	github.com/alecthomas/kong v0.9.0
+	github.com/chelnak/ysmrr v0.4.0
 	github.com/jyggen/go-plex-client v0.0.0-20240531124134-b23c71358946
 	github.com/mattn/go-colorable v0.1.13
+	golang.org/x/sync v0.7.0
 )
 
 require (
-	github.com/fatih/color v1.16.0 // indirect
-	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/websocket v1.4.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.2 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
 )
