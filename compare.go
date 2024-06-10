@@ -84,7 +84,7 @@ func compare(cli *posterrCli) error {
 			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbId, s)
 
 			if ctx.Err() != nil {
-				return nil
+				return ctx.Err()
 			}
 
 			if err != nil {
@@ -95,7 +95,7 @@ func compare(cli *posterrCli) error {
 			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
 
 			if ctx.Err() != nil {
-				return nil
+				return ctx.Err()
 			}
 
 			if err != nil {

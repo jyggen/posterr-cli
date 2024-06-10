@@ -46,7 +46,7 @@ func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], thre
 			if err == nil {
 				s.CompleteWithMessage("Done.")
 			} else {
-				s.ErrorWithMessage("Errored.")
+				s.ErrorWithMessagef("%s", err)
 			}
 
 			return err
