@@ -1,6 +1,6 @@
 module github.com/jyggen/posterr-cli
 
-go 1.21.7
+go 1.22.4
 
 require (
 	github.com/adrg/xdg v0.4.0
