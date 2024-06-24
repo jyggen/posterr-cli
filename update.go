@@ -55,21 +55,23 @@ func update(cli *posterrCli) error {
 				return err
 			}
 
-			s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
-			metadbHash, err := hashFile(metadbPath)
+			if !cli.Update.Force {
+				s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
+				metadbHash, err := hashFile(metadbPath)
 
-			if err != nil {
-				return err
-			}
+				if err != nil {
+					return err
+				}
 
-			plexHash, err := hashFile(plexPath)
+				plexHash, err := hashFile(plexPath)
 
-			if err != nil {
-				return err
-			}
+				if err != nil {
+					return err
+				}
 
-			if plexHash == metadbHash {
-				continue
+				if plexHash == metadbHash {
+					continue
+				}
 			}
 
 			s.UpdateMessagef("%s: Uploading poster to Plex...", imdbId)
