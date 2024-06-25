@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/chelnak/ysmrr"
-	"github.com/mattn/go-colorable"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+
+	"github.com/chelnak/ysmrr"
+	"github.com/mattn/go-colorable"
+	"golang.org/x/sync/errgroup"
 )
 
 type consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner) error
@@ -18,9 +19,9 @@ type producerFunc[T any] func(ctx context.Context, queue chan T) error
 func getSpinnerWriter() io.Writer {
 	if runtime.GOOS == "windows" {
 		return colorable.NewColorableStderr()
-	} else {
-		return os.Stderr
 	}
+
+	return os.Stderr
 }
 
 func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], threadCount int) error {

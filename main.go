@@ -2,21 +2,22 @@ package main
 
 import (
 	"fmt"
-	"github.com/adrg/xdg"
-	"github.com/alecthomas/kong"
 	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/adrg/xdg"
+	"github.com/alecthomas/kong"
 )
 
 type httpConfig struct {
-	HttpTimeout time.Duration `help:"" default:"${timeout}"`
+	HTTPTimeout time.Duration `help:"" default:"${timeout}"`
 }
 
 type plexConfig struct {
-	PlexBaseUrl url.URL `arg:"" name:"plex-base-url" help:""`
+	PlexBaseURL url.URL `arg:"" name:"plex-base-url" help:""`
 	PlexToken   string  `arg:"" name:"plex-token" help:""`
 }
 

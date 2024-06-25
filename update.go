@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/chelnak/ysmrr"
-	"github.com/jyggen/go-plex-client"
 	"os"
 	"strings"
+
+	"github.com/chelnak/ysmrr"
+	"github.com/jyggen/go-plex-client"
 )
 
 type updateCmd struct {
@@ -15,8 +16,8 @@ type updateCmd struct {
 }
 
 func update(cli *posterrCli) error {
-	client := newClient(cli.Update.HttpTimeout)
-	connection, err := plex.New(strings.TrimSuffix(cli.Update.PlexBaseUrl.String(), "/"), cli.Update.PlexToken)
+	client := newClient(cli.Update.HTTPTimeout)
+	connection, err := plex.New(strings.TrimSuffix(cli.Update.PlexBaseURL.String(), "/"), cli.Update.PlexToken)
 
 	if err != nil {
 		return err
@@ -28,13 +29,13 @@ func update(cli *posterrCli) error {
 		return produceMoviesMetadata(ctx, connection, queue)
 	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) error {
 		for job := range queue {
-			imdbId := getImdbId(job)
+			imdbID := getImdbID(job)
 
-			if imdbId == "" {
+			if imdbID == "" {
 				continue
 			}
 
-			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbId, s)
+			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbID, s)
 
 			if ctx.Err() != nil {
 				return ctx.Err()
@@ -44,7 +45,7 @@ func update(cli *posterrCli) error {
 				return err
 			}
 
-			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbId)
+			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbID)
 			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
 
 			if ctx.Err() != nil {
@@ -56,7 +57,7 @@ func update(cli *posterrCli) error {
 			}
 
 			if !cli.Update.Force {
-				s.UpdateMessagef("%s: Comparing poster checksums...", imdbId)
+				s.UpdateMessagef("%s: Comparing poster checksums...", imdbID)
 				metadbHash, err := hashFile(metadbPath)
 
 				if err != nil {
@@ -74,7 +75,7 @@ func update(cli *posterrCli) error {
 				}
 			}
 
-			s.UpdateMessagef("%s: Uploading poster to Plex...", imdbId)
+			s.UpdateMessagef("%s: Uploading poster to Plex...", imdbID)
 			f, err := os.Open(metadbPath)
 
 			if err != nil {

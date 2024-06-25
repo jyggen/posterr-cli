@@ -31,6 +31,8 @@ func downloadOrCache(download func(u string) (*http.Response, error), cacheDir s
 			return "", err
 		}
 
+		defer resp.Body.Close()
+
 		if resp.StatusCode != http.StatusOK {
 			return "", fmt.Errorf("response error: %d", resp.StatusCode)
 		}

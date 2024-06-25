@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/jyggen/go-plex-client"
 	"net/http"
 	"path"
 	"slices"
 	"strings"
+
+	"github.com/jyggen/go-plex-client"
 )
 
 func getPosterByMetadata(connection *plex.Plex, cacheDir string, metadata plex.Metadata) (string, error) {
@@ -15,7 +16,7 @@ func getPosterByMetadata(connection *plex.Plex, cacheDir string, metadata plex.M
 	}, cacheDir, metadata.Thumb)
 }
 
-func getImdbId(metadata plex.Metadata) string {
+func getImdbID(metadata plex.Metadata) string {
 	idx := slices.IndexFunc(metadata.AltGUIDs, func(guid plex.AltGUID) bool {
 		return strings.HasPrefix(guid.ID, "imdb://")
 	})

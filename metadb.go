@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/chelnak/ysmrr"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/chelnak/ysmrr"
 )
 
 func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string, imdbId string, s *ysmrr.Spinner) (string, error) {
