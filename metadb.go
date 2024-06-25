@@ -22,7 +22,7 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 
 		s.UpdateMessagef("%s: Checking MetaDB for the best poster available...", imdbId)
 
-		req, err := http.NewRequestWithContext(ctx, "https://posters.metadb.info/imdb/"+imdbId, http.MethodGet, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://posters.metadb.info/imdb/"+imdbId, nil)
 
 		if err != nil {
 			return "", err
