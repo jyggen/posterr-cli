@@ -29,11 +29,15 @@ type posterrCli struct {
 	Version       VersionFlag `name:"version" help:"Show version number."`
 }
 
-func (p *posterrCli) Validate() error {
-	maxThreads := runtime.NumCPU()
+var maxThreads int
 
+func init() {
+	maxThreads = (runtime.NumCPU() * 2) + 1
+}
+
+func (p *posterrCli) Validate() error {
 	if p.Threads < 1 || p.Threads > maxThreads {
-		return fmt.Errorf("threads must be a number between 1 and %d", runtime.NumCPU())
+		return fmt.Errorf("threads must be a number between 1 and %d", maxThreads)
 	}
 
 	return nil
@@ -49,7 +53,7 @@ func main() {
 	cli := &posterrCli{}
 	ctx := kong.Parse(cli, kong.Name("posterr"), kong.UsageOnError(), kong.Vars{
 		"cache":   filepath.Join(cacheDir, "posterr"),
-		"threads": strconv.Itoa(runtime.NumCPU()),
+		"threads": strconv.Itoa(maxThreads),
 		"timeout": (time.Second * 10).String(),
 	})
 
