@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/adrg/xdg"
 	"github.com/alecthomas/kong"
 )
 
@@ -40,9 +40,15 @@ func (p *posterrCli) Validate() error {
 }
 
 func main() {
+	cacheDir, err := os.UserCacheDir()
+
+	if err != nil {
+		panic(err)
+	}
+
 	cli := &posterrCli{}
 	ctx := kong.Parse(cli, kong.Name("posterr"), kong.UsageOnError(), kong.Vars{
-		"cache":   filepath.Join(xdg.CacheHome, "posterr"),
+		"cache":   filepath.Join(cacheDir, "posterr"),
 		"threads": strconv.Itoa(runtime.NumCPU()),
 		"timeout": (time.Second * 10).String(),
 	})

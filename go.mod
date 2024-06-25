@@ -3,7 +3,6 @@ module github.com/jyggen/posterr-cli
 go 1.22.4
 
 require (
-	github.com/adrg/xdg v0.4.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/chelnak/ysmrr v0.4.0
 	github.com/jyggen/go-plex-client v0.0.0-20240531124134-b23c71358946
