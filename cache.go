@@ -13,7 +13,7 @@ func downloadOrCache(download func(u string) (*http.Response, error), cacheDir s
 	sum := fmt.Sprintf("%x", sha256.Sum256([]byte(u)))
 	cacheDir = filepath.Join(cacheDir, sum[0:3], sum[3:6], sum[6:9], sum[9:12], sum[12:15], sum[15:18])
 
-	if err := os.MkdirAll(cacheDir, 0777); err != nil {
+	if err := os.MkdirAll(cacheDir, 0700); err != nil {
 		return "", err
 	}
 
@@ -43,7 +43,7 @@ func downloadOrCache(download func(u string) (*http.Response, error), cacheDir s
 			return "", err
 		}
 
-		if err = os.WriteFile(fileName, body, 0666); err != nil {
+		if err = os.WriteFile(fileName, body, 0400); err != nil {
 			return "", err
 		}
 	} else if err = f.Close(); err != nil {

@@ -12,7 +12,7 @@ import (
 )
 
 func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string, imdbId string, s *ysmrr.Spinner) (string, error) {
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 	for {
@@ -22,11 +22,19 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 
 		s.UpdateMessagef("%s: Checking MetaDB for the best poster available...", imdbId)
 
-		res, err := client.Get("https://posters.metadb.info/imdb/" + imdbId)
+		req, err := http.NewRequestWithContext(ctx, "https://posters.metadb.info/imdb/"+imdbId, http.MethodGet, nil)
 
 		if err != nil {
 			return "", err
 		}
+
+		res, err := client.Do(req)
+
+		if err != nil {
+			return "", err
+		}
+
+		defer res.Body.Close()
 
 		switch res.StatusCode {
 		case http.StatusAccepted:
@@ -72,7 +80,13 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 		case http.StatusSeeOther:
 			s.UpdateMessagef("%s: Writing poster to disk...", imdbId)
 			return downloadOrCache(func(u string) (*http.Response, error) {
-				return client.Get(u)
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return client.Do(req)
 			}, cacheDir, res.Header.Get("Location"))
 		default:
 			return "", fmt.Errorf("unknown error: %v", res.StatusCode)

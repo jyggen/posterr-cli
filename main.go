@@ -29,6 +29,8 @@ type posterrCli struct {
 	Version       VersionFlag `name:"version" help:"Show version number."`
 }
 
+const defaultTimeout = 10 * time.Second
+
 var maxThreads int
 
 func init() {
@@ -54,7 +56,7 @@ func main() {
 	ctx := kong.Parse(cli, kong.Name("posterr"), kong.UsageOnError(), kong.Vars{
 		"cache":   filepath.Join(cacheDir, "posterr"),
 		"threads": strconv.Itoa(maxThreads),
-		"timeout": (time.Second * 10).String(),
+		"timeout": defaultTimeout.String(),
 	})
 
 	switch ctx.Command() {

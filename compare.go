@@ -66,7 +66,29 @@ func compare(cli *posterrCli) error {
 
 	defer b.Flush()
 
-	if _, err = b.WriteString("<!doctype html><html lang=\"en\"><head><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\"></head><body><main role=\"main\" class=\"container\"><table class=\"table table-striped\"><thead class=\"thead-dark\"><tr><th>IMDb ID</th><th>Plex</th><th>MetaDB</th></tr></thead><tbody>"); err != nil {
+	if _, err = b.WriteString(`
+<!doctype html>
+<html lang="en">
+	<head>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
+			integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			crossorigin="anonymous"
+		>
+	</head>
+	<body>
+		<main role="main" class="container">
+			<table class="table table-striped">
+				<thead class="thead-dark">
+					<tr>
+						<th>IMDb ID</th>
+						<th>Plex</th>
+						<th>MetaDB</th>
+					</tr>
+				</thead>
+			<tbody>
+`); err != nil {
 		return err
 	}
 
@@ -123,7 +145,13 @@ func compare(cli *posterrCli) error {
 			s.UpdateMessagef("%s: Waiting for other threads...", imdbID)
 			mutex.Lock()
 			s.UpdateMessagef("%s: Writing comparison to disk...", imdbID)
-			if _, err = b.WriteString(fmt.Sprintf("<tr><td>%s</td><td><img width=300 src=\"file://%s\"></td><td><img width=300 src=\"file://%s\"></td></tr>\n", imdbID, plexPath, metadbPath)); err != nil {
+			if _, err = b.WriteString(fmt.Sprintf(`
+<tr>
+	<td>%s</td>
+	<td><img width=300 src="file://%s"></td>
+	<td><img width=300 src="file://%s"></td>
+</tr>
+`, imdbID, plexPath, metadbPath)); err != nil {
 				return err
 			}
 			mutex.Unlock()
