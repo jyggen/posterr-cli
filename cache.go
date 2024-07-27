@@ -5,19 +5,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 )
 
 func downloadOrCache(download func(u string) (*http.Response, error), cacheDir string, u string) (string, error) {
 	sum := fmt.Sprintf("%x", sha256.Sum256([]byte(u)))
 	cacheDir = filepath.Join(cacheDir, sum[0:3], sum[3:6], sum[6:9], sum[9:12], sum[12:15], sum[15:18])
+	parsed, err := url.Parse(u)
+
+	if err != nil {
+		return "", err
+	}
 
 	if err := os.MkdirAll(cacheDir, 0700); err != nil {
 		return "", err
 	}
-
-	fileName := filepath.Join(cacheDir, sum)
+	fileName := filepath.Join(cacheDir, sum+path.Ext(parsed.Path))
 	f, err := os.Open(fileName)
 
 	if err != nil {

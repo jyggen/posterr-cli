@@ -24,6 +24,7 @@ type plexConfig struct {
 type posterrCli struct {
 	CacheBasePath string      `help:"" default:"${cache}"`
 	Compare       *compareCmd `cmd:"" help:""`
+	Preview       *previewCmd `cmd:"" help:""`
 	Threads       int         `help:"" default:"${threads}"`
 	Update        *updateCmd  `cmd:"" help:""`
 	Version       VersionFlag `name:"version" help:"Show version number."`
@@ -62,6 +63,8 @@ func main() {
 	switch ctx.Command() {
 	case "compare <plex-base-url> <plex-token>":
 		ctx.FatalIfErrorf(compare(cli))
+	case "preview <imdb-id>":
+		ctx.FatalIfErrorf(preview(cli))
 	case "update <plex-base-url> <plex-token>":
 		ctx.FatalIfErrorf(update(cli))
 	default:
