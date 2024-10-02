@@ -60,14 +60,5 @@ func main() {
 		"timeout": defaultTimeout.String(),
 	})
 
-	switch ctx.Command() {
-	case "compare <plex-base-url> <plex-token>":
-		ctx.FatalIfErrorf(compare(cli))
-	case "preview <imdb-id>":
-		ctx.FatalIfErrorf(preview(cli))
-	case "update <plex-base-url> <plex-token>":
-		ctx.FatalIfErrorf(update(cli))
-	default:
-		ctx.FatalIfErrorf(ctx.PrintUsage(true))
-	}
+	ctx.FatalIfErrorf(ctx.Run())
 }

@@ -20,25 +20,7 @@ type compareCmd struct {
 	OutputFile string `help:"Defaults to stdout." type:"path" default:"-"`
 }
 
-func hashFile(file string) (string, error) {
-	f, err := os.Open(file)
-
-	if err != nil {
-		return "", err
-	}
-
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
-
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
-}
-
-func compare(cli *posterrCli) error {
+func (c *compareCmd) Run(cli *posterrCli) error {
 	var outputFile *os.File
 	var err error
 
@@ -167,4 +149,22 @@ func compare(cli *posterrCli) error {
 	}
 
 	return err2
+}
+
+func hashFile(file string) (string, error) {
+	f, err := os.Open(file)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
 }

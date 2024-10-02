@@ -14,7 +14,7 @@ type previewCmd struct {
 	ImdbID string `arg:"" name:"imdb-id" help:""`
 }
 
-func preview(cli *posterrCli) error {
+func (p *previewCmd) Run(cli *posterrCli) error {
 	client := newClient(cli.Preview.HTTPTimeout)
 	ctx, cancel := context.WithCancel(context.Background())
 	sig := make(chan os.Signal, 1)

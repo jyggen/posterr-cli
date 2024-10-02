@@ -15,7 +15,7 @@ type updateCmd struct {
 	Force bool `help:""`
 }
 
-func update(cli *posterrCli) error {
+func (u *updateCmd) Run(cli *posterrCli) error {
 	client := newClient(cli.Update.HTTPTimeout)
 	connection, err := plex.New(strings.TrimSuffix(cli.Update.PlexBaseURL.String(), "/"), cli.Update.PlexToken)
 
