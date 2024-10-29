@@ -96,6 +96,10 @@ func (c *compareCmd) Run(cli *posterrCli) error {
 				return err
 			}
 
+			if metadbPath == "" {
+				continue
+			}
+
 			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbID)
 			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
 

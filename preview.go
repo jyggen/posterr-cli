@@ -29,5 +29,9 @@ func (p *previewCmd) Run(cli *posterrCli) error {
 		return err
 	}
 
+	if posterPath == "" {
+		return nil
+	}
+
 	return browser.OpenFile(posterPath)
 }
