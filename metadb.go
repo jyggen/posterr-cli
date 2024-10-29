@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -84,7 +83,7 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 			updateMessagef(s, "%s: Waiting for MetaDB's servers to catch up...", imdbId)
 			time.Sleep(sleepTime)
 		case http.StatusNotFound:
-			return "", errors.New("not found")
+			return "", fmt.Errorf("%s: not found", imdbId)
 		case http.StatusSeeOther:
 			updateMessagef(s, "%s: Writing poster to disk...", imdbId)
 			return downloadOrCache(func(u string) (*http.Response, error) {
