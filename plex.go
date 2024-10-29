@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path"
 	"slices"
@@ -11,9 +12,15 @@ import (
 )
 
 func getPosterByMetadata(connection *plex.Plex, cacheDir string, metadata plex.Metadata) (string, error) {
-	return downloadOrCache(func(_ string) (*http.Response, error) {
+	fileName, err := downloadOrCache(func(_ string) (*http.Response, error) {
 		return connection.GetThumbnail(metadata.RatingKey, path.Base(metadata.Thumb))
 	}, cacheDir, metadata.Thumb)
+
+	if err != nil {
+		return fileName, fmt.Errorf("%s: %w", metadata.RatingKey, err)
+	}
+
+	return fileName, nil
 }
 
 func getImdbID(metadata plex.Metadata) string {

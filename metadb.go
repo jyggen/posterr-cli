@@ -33,13 +33,13 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://posters.metadb.info/imdb/"+imdbId, nil)
 
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("%s: %w", imdbId, err)
 		}
 
 		res, err := client.Do(req)
 
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("%s: %w", imdbId, err)
 		}
 
 		defer res.Body.Close()
@@ -56,7 +56,7 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 				sleepSeconds, err := strconv.Atoi(sleepHeader)
 
 				if err != nil {
-					return "", err
+					return "", fmt.Errorf("%s: %w", imdbId, err)
 				}
 
 				sleepTime = time.Duration(sleepSeconds) * time.Second
@@ -75,7 +75,7 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 				sleepSeconds, err := strconv.Atoi(sleepHeader)
 
 				if err != nil {
-					return "", err
+					return "", fmt.Errorf("%s: %w", imdbId, err)
 				}
 
 				sleepTime = time.Duration(sleepSeconds) * time.Second
@@ -91,15 +91,15 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 				req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("%s: %w", imdbId, err)
 				}
 
 				return client.Do(req)
 			}, cacheDir, res.Header.Get("Location"))
 		default:
-			return "", fmt.Errorf("unknown error: %v", res.StatusCode)
+			return "", fmt.Errorf("%s: unknown error: %d", imdbId, res.StatusCode)
 		}
 	}
 
-	return "", errors.New("cancelled")
+	return "", fmt.Errorf("%s: cancelled", imdbId)
 }
