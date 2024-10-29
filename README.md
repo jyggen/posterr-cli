@@ -13,6 +13,14 @@ that would be updated by the `update` command.
 posterr compare <plex-base-url> <plex-token> [flags]
 ```
 
+### Preview
+
+This command will open a specific movie's poster (as suggested by MetaDB) in a new browser window.
+
+```
+posterr preview <imdb-id> [flags]
+```
+
 ### Update
 
 This command will update all local posters with the posters suggested by MetaDB after analyzing all available posters
