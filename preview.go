@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,7 +31,7 @@ func (p *previewCmd) Run(cli *posterrCli) error {
 	}
 
 	if posterPath == "" {
-		return nil
+		return errors.New("unknown movie")
 	}
 
 	return browser.OpenFile(posterPath)
