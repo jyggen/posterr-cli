@@ -1,6 +1,8 @@
 module github.com/jyggen/posterr-cli
 
-go 1.22.4
+go 1.24
+
+toolchain go1.24.5
 
 require (
 	github.com/alecthomas/kong v1.12.0
@@ -16,6 +18,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/term v0.33.0 // indirect
 )
