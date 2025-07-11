@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,9 +21,8 @@ type compareCmd struct {
 	OutputFile string `help:"Defaults to stdout." type:"path" default:"-"`
 }
 
-func (c *compareCmd) Run(cli *posterrCli) error {
+func (c *compareCmd) Run(cli *posterrCli) (err error) {
 	var outputFile *os.File
-	var err error
 
 	if cli.Compare.OutputFile == "-" {
 		outputFile = os.Stdout
@@ -33,7 +33,9 @@ func (c *compareCmd) Run(cli *posterrCli) error {
 			return err
 		}
 
-		defer outputFile.Close()
+		defer func() {
+			err = errors.Join(outputFile.Close(), err)
+		}()
 	}
 
 	client := newClient(cli.Compare.HTTPTimeout)
@@ -46,7 +48,9 @@ func (c *compareCmd) Run(cli *posterrCli) error {
 	connection.HTTPClient = *client
 	b := bufio.NewWriter(outputFile)
 
-	defer b.Flush()
+	defer func() {
+		err = errors.Join(b.Flush(), err)
+	}()
 
 	if _, err = b.WriteString(`
 <!doctype html>
@@ -131,13 +135,14 @@ func (c *compareCmd) Run(cli *posterrCli) error {
 			s.UpdateMessagef("%s: Waiting for other threads...", imdbID)
 			mutex.Lock()
 			s.UpdateMessagef("%s: Writing comparison to disk...", imdbID)
-			if _, err = b.WriteString(fmt.Sprintf(`
+
+			if _, err = fmt.Fprintf(b, `
 <tr>
 	<td>%s</td>
 	<td><img width=300 src="file://%s"></td>
 	<td><img width=300 src="file://%s"></td>
 </tr>
-`, imdbID, plexPath, metadbPath)); err != nil {
+`, imdbID, plexPath, metadbPath); err != nil {
 				return err
 			}
 			mutex.Unlock()
@@ -155,14 +160,16 @@ func (c *compareCmd) Run(cli *posterrCli) error {
 	return err2
 }
 
-func hashFile(file string) (string, error) {
+func hashFile(file string) (hash string, err error) {
 	f, err := os.Open(file)
 
 	if err != nil {
 		return "", err
 	}
 
-	defer f.Close()
+	defer func() {
+		err = errors.Join(f.Close(), err)
+	}()
 
 	data, err := io.ReadAll(f)
 
