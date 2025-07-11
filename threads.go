@@ -55,6 +55,9 @@ func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], thre
 	}
 
 	sm.Start()
+
+	defer sm.Stop()
+
 	wg.Go(func() error {
 		defer close(queue)
 
@@ -62,8 +65,6 @@ func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], thre
 	})
 
 	err := wg.Wait()
-
-	sm.Stop()
 
 	return err
 }
