@@ -1,25 +1,18 @@
-package main
+package update
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"strings"
-
-	"github.com/chelnak/ysmrr"
-	"github.com/jyggen/go-plex-client"
+	"github.com/jyggen/posterr-cli/internal/cmd"
 )
 
-type updateCmd struct {
-	httpConfig
-	metadbConfig
-	plexConfig
+type Command struct {
+	cmd.PlexConfig
 	Force bool `help:""`
 }
 
-func (u *updateCmd) Run(cli *posterrCli) error {
-	client := newClient(cli.Update.HTTPTimeout)
-	connection, err := plex.New(strings.TrimSuffix(cli.Update.PlexBaseURL.String(), "/"), cli.Update.PlexToken)
+func (cmd *Command) Run() error {
+	return nil
+	/*client := newClient(cmd.HTTPTimeout)
+	connection, err := plex.New(strings.TrimSuffix(cmd.PlexBaseURL.String(), "/"), cmd.PlexToken)
 
 	if err != nil {
 		return err
@@ -27,7 +20,7 @@ func (u *updateCmd) Run(cli *posterrCli) error {
 
 	connection.HTTPClient = *client.Client()
 
-	metadbClient, err := newMetaDBClient(cli.Update.ApiURL, cli.Update.DnsResolver, cli.Update.HTTPTimeout)
+	metadbClient, err := newMetaDBClient(cmd.ApiURL, cmd.DnsResolver, cmd.HTTPTimeout)
 
 	if err != nil {
 		return err
@@ -106,5 +99,5 @@ func (u *updateCmd) Run(cli *posterrCli) error {
 		}
 
 		return nil
-	}, cli.Threads)
+	}, cli.Threads)*/
 }

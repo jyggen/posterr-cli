@@ -12,7 +12,7 @@ import (
 )
 
 func getPosterByMetadata(connection *plex.Plex, cacheDir string, metadata plex.Metadata) (string, error) {
-	fileName, err := downloadOrCache(func(_ string) (*http.Response, error) {
+	fileName, err := downloadOrCache(func(string) (*http.Response, error) {
 		return connection.GetThumbnail(metadata.RatingKey, path.Base(metadata.Thumb))
 	}, cacheDir, metadata.Thumb)
 

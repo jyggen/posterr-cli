@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	internalhttp "github.com/jyggen/posterr-cli/internal/http"
+	"github.com/jyggen/posterr-cli/internal/metadb"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,30 +12,24 @@ import (
 	"github.com/chelnak/ysmrr"
 )
 
-func updateMessagef(s *ysmrr.Spinner, format string, a ...interface{}) {
-	if s == nil {
-		return
+func newMetaDBClient(apiUrl string, dnsResolver string, timeout time.Duration) (*metadb.Client, error) {
+	options := []internalhttp.Option{
+		internalhttp.WithTimeout(timeout),
+		internalhttp.WithUserAgent(fmt.Sprintf("posterr/%s", version)),
 	}
 
-	s.UpdateMessagef(format, a...)
+	if apiUrl == "" {
+		return metadb.NewClientFromServiceDiscovery(dnsResolver, options...)
+	}
+
+	return metadb.NewClient(apiUrl, options...), nil
 }
 
-func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string, imdbId string, s *ysmrr.Spinner) (string, error) {
-	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
+func getPosterByImdbId(ctx context.Context, client *metadb.Client, imdbId string, s *ysmrr.Spinner) (string, error) {
 	for ctx.Err() == nil {
 		updateMessagef(s, "%s: Checking MetaDB for the best poster available...", imdbId)
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodHead, "https://posters.metadb.info/imdb/"+imdbId, nil)
-
-		if err != nil {
-			return "", fmt.Errorf("%s: %w", imdbId, err)
-		}
-
-		var res *http.Response
-
-		res, err = client.Do(req)
+		res, err := client.GetPosterByImdbId(ctx, imdbId)
 
 		if err != nil {
 			return "", fmt.Errorf("%s: %w", imdbId, err)
@@ -69,16 +65,7 @@ func getPosterByImdbId(ctx context.Context, client *http.Client, cacheDir string
 		case http.StatusNotFound:
 			return "", nil
 		case http.StatusSeeOther:
-			updateMessagef(s, "%s: Writing poster to disk...", imdbId)
-			return downloadOrCache(func(u string) (*http.Response, error) {
-				req, err = http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-
-				if err != nil {
-					return nil, fmt.Errorf("%s: %w", imdbId, err)
-				}
-
-				return client.Do(req)
-			}, cacheDir, res.Header.Get("Location"))
+			return res.Header.Get("Location"), nil
 		default:
 			return "", fmt.Errorf("%s: unknown error: %d", imdbId, res.StatusCode)
 		}
@@ -105,4 +92,12 @@ func getRetryAfter(res *http.Response) (time.Duration, error) {
 	}
 
 	return sleepTime, nil
+}
+
+func updateMessagef(s *ysmrr.Spinner, format string, a ...interface{}) {
+	if s == nil {
+		return
+	}
+
+	s.UpdateMessagef(format, a...)
 }

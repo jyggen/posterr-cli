@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,26 +12,39 @@ import (
 
 type previewCmd struct {
 	httpConfig
+	metadbConfig
 	ImdbID string `arg:"" name:"imdb-id" help:""`
 }
 
 func (p *previewCmd) Run(cli *posterrCli) error {
 	client := newClient(cli.Preview.HTTPTimeout)
-	ctx, cancel := context.WithCancel(context.Background())
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		<-sig
-		cancel()
-	}()
-	posterPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, cli.Preview.ImdbID, nil)
+	metadbClient, err := newMetaDBClient(cli.Preview.ApiURL, cli.Preview.DnsResolver, cli.Preview.HTTPTimeout)
 
 	if err != nil {
 		return err
 	}
 
-	if posterPath == "" {
-		return errors.New("unknown movie")
+	ctx, cancel := context.WithCancel(context.Background())
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sig
+		cancel()
+	}()
+	posterUrl, err := getPosterByImdbId(ctx, metadbClient, cli.Preview.ImdbID, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if posterUrl == "" {
+		return fmt.Errorf("%s: unknown movie", cli.Preview.ImdbID)
+	}
+
+	posterPath, err := downloadOrCache(client.Get, cli.CacheBasePath, posterUrl)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", cli.Preview.ImdbID, err)
 	}
 
 	return browser.OpenFile(posterPath)

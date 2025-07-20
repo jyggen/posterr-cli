@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"github.com/jyggen/posterr-cli/cmd"
 	"io"
 	"os"
 	"strings"
@@ -16,8 +17,9 @@ import (
 )
 
 type compareCmd struct {
-	httpConfig
-	plexConfig
+	cmd.HTTPConfig
+	cmd.MetaDBConfig
+	cmd.PlexConfig
 	OutputFile string `help:"Defaults to stdout." type:"path" default:"-"`
 }
 
@@ -45,7 +47,14 @@ func (c *compareCmd) Run(cli *posterrCli) (err error) {
 		return err
 	}
 
-	connection.HTTPClient = *client
+	connection.HTTPClient = *client.Client()
+
+	metadbClient, err := newMetaDBClient(cli.Compare.ApiURL, cli.Compare.DnsResolver, cli.Compare.HTTPTimeout)
+
+	if err != nil {
+		return err
+	}
+
 	b := bufio.NewWriter(outputFile)
 
 	defer func() {
@@ -90,7 +99,7 @@ func (c *compareCmd) Run(cli *posterrCli) (err error) {
 				continue
 			}
 
-			metadbPath, err := getPosterByImdbId(ctx, client, cli.CacheBasePath, imdbID, s)
+			metadbUrl, err := getPosterByImdbId(ctx, metadbClient, imdbID, s)
 
 			if ctx.Err() != nil {
 				return ctx.Err()
@@ -100,8 +109,14 @@ func (c *compareCmd) Run(cli *posterrCli) (err error) {
 				return err
 			}
 
-			if metadbPath == "" {
+			if metadbUrl == "" {
 				continue
+			}
+
+			metadbPath, err := downloadOrCache(client.Get, cli.CacheBasePath, metadbUrl)
+
+			if err != nil {
+				return err
 			}
 
 			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbID)
