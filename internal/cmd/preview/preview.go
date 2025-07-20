@@ -3,7 +3,6 @@ package preview
 import (
 	"context"
 	"github.com/jyggen/posterr-cli/internal/cmd"
-	"github.com/jyggen/posterr-cli/internal/http"
 	"github.com/jyggen/posterr-cli/internal/metadb"
 	"github.com/pkg/browser"
 )
@@ -15,7 +14,7 @@ type Command struct {
 	ImdbID           string `arg:"" name:"imdb-id" help:""`
 }
 
-func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client) error {
+func (cmd *Command) Run(ctx context.Context, metadbClient *metadb.Client) error {
 	posterUrl, err := metadbClient.GetPosterByImdbId(ctx, cmd.ImdbID)
 
 	if err != nil {
