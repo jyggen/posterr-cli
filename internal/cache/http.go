@@ -29,7 +29,7 @@ func NewCachingMiddleware(cache *Cache) internalhttp.MiddlewareFunc {
 				return http.ReadResponse(bufio.NewReader(bytes.NewBuffer(v)), req)
 			}
 
-			if !errors.Is(badger.ErrKeyNotFound, err) {
+			if !errors.Is(err, badger.ErrKeyNotFound) {
 				return nil, err
 			}
 

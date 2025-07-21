@@ -42,7 +42,6 @@ func NewMoviesProducer(plexClient *Client) func(context.Context, chan *plex.Meta
 				case <-ctx.Done():
 					return ctx.Err()
 				case queue <- c:
-					break
 				}
 			}
 		}
