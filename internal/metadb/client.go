@@ -23,13 +23,13 @@ func NewClient(baseUrl string, client *internalhttp.Client) *Client {
 	}
 }
 
-func (c *Client) CheckConnectivity() error {
-	_, err := c.client.Get(fmt.Sprintf("%s/_/%s", c.baseUrl, rand.Text()))
+func (c *Client) CheckConnectivity(ctx context.Context) error {
+	_, err := c.client.Get(ctx, fmt.Sprintf("%s/_/%s", c.baseUrl, rand.Text()))
 
 	return err
 }
 
-func (c *Client) GetPosterByImdbId(ctx context.Context, imdbId string) (string, error) {
+func (c *Client) PosterByImdbId(ctx context.Context, imdbId string) (string, error) {
 	for {
 		select {
 		case <-ctx.Done():

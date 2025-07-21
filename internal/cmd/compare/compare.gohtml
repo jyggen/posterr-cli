@@ -1,3 +1,4 @@
+{{define "prefix"}}
 <!doctype html>
 <html lang="en">
 <body>
@@ -7,12 +8,22 @@
             <tr>
                 <th>IMDb ID</th>
                 <th>Plex</th>
-                <th>MetaDB</th>
+                <th>Posterr</th>
             </tr>
             </thead>
             <tbody>
+{{end}}
+{{define "loop"}}
+                <tr>
+                    <td>{{ .ImdbId }}</td>
+                    <td><img width=300 src="{{ .PlexDataUrl }}"></td>
+                    <td><img width=300 src="{{ .PosterrDataUrl }}"></td>
+                </tr>
+{{end}}
+{{define "suffix"}}
             </tbody>
         </table>
     </main>
 </body>
 </html>
+{{end}}

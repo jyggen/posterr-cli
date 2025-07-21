@@ -2,6 +2,7 @@ package metadb
 
 import (
 	"bytes"
+	"context"
 	"crypto/ed25519"
 	"crypto/x509"
 	_ "embed"
@@ -22,7 +23,7 @@ const svcbName = "posters.metadb.info."
 //go:embed public.pem
 var publicKey []byte
 
-func NewClientFromServiceDiscovery(dnsResolver string, client *http.Client) (*Client, error) {
+func NewClientFromServiceDiscovery(ctx context.Context, dnsResolver string, client *http.Client) (*Client, error) {
 	seq, err := findRemoteService(dnsResolver)
 
 	if err != nil {
@@ -40,7 +41,7 @@ func NewClientFromServiceDiscovery(dnsResolver string, client *http.Client) (*Cl
 
 		c.client = c.client.WithOptions(middleware)
 
-		if innerErr = c.CheckConnectivity(); innerErr == nil {
+		if innerErr = c.CheckConnectivity(ctx); innerErr == nil {
 			return c, nil
 		}
 	}

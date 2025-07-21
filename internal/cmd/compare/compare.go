@@ -1,35 +1,50 @@
-package main
+package compare
 
 import (
 	"bufio"
+	"bytes"
 	"context"
-	"crypto/sha256"
+	_ "embed"
 	"errors"
-	"fmt"
-	"github.com/jyggen/posterr-cli/cmd"
+	"github.com/chelnak/ysmrr"
+	"github.com/jyggen/posterr-cli/internal/cmd"
+	"github.com/jyggen/posterr-cli/internal/concurrency"
+	"github.com/jyggen/posterr-cli/internal/http"
+	"github.com/jyggen/posterr-cli/internal/metadb"
+	"github.com/jyggen/posterr-cli/internal/plex"
+	"github.com/vincent-petithory/dataurl"
+	"html/template"
 	"io"
 	"os"
-	"strings"
 	"sync"
-
-	"github.com/chelnak/ysmrr"
-	"github.com/jyggen/go-plex-client"
 )
 
-type compareCmd struct {
-	cmd.HTTPConfig
-	cmd.MetaDBConfig
-	cmd.PlexConfig
-	OutputFile string `help:"Defaults to stdout." type:"path" default:"-"`
+//go:embed compare.gohtml
+var tmplRaw string
+var tmpl = template.Must(template.New("").Parse(tmplRaw))
+
+type tmplData struct {
+	ImdbId         string
+	PlexDataUrl    template.URL
+	PosterrDataUrl template.URL
 }
 
-func (c *compareCmd) Run(cli *posterrCli) (err error) {
+type Command struct {
+	cmd.CacheConfig       `embed:""`
+	cmd.ConcurrencyConfig `embed:""`
+	cmd.HTTPConfig        `embed:""`
+	cmd.MetaDBConfig      `embed:""`
+	cmd.PlexConfig        `embed:""`
+	OutputFile            string `arg:"" default:"-" type:"path" help:""`
+}
+
+func (c *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) (err error) {
 	var outputFile *os.File
 
-	if cli.Compare.OutputFile == "-" {
+	if c.OutputFile == "-" {
 		outputFile = os.Stdout
 	} else {
-		outputFile, err = os.Create(cli.Compare.OutputFile)
+		outputFile, err = os.Create(c.OutputFile)
 
 		if err != nil {
 			return err
@@ -40,157 +55,110 @@ func (c *compareCmd) Run(cli *posterrCli) (err error) {
 		}()
 	}
 
-	client := newClient(cli.Compare.HTTPTimeout)
-	connection, err := plex.New(strings.TrimSuffix(cli.Compare.PlexBaseURL.String(), "/"), cli.Compare.PlexToken)
-
-	if err != nil {
-		return err
-	}
-
-	connection.HTTPClient = *client.Client()
-
-	metadbClient, err := newMetaDBClient(cli.Compare.ApiURL, cli.Compare.DnsResolver, cli.Compare.HTTPTimeout)
-
-	if err != nil {
-		return err
-	}
-
 	b := bufio.NewWriter(outputFile)
 
 	defer func() {
 		err = errors.Join(b.Flush(), err)
 	}()
 
-	if _, err = b.WriteString(`
-<!doctype html>
-<html lang="en">
-	<head>
-		<link
-			rel="stylesheet"
-			href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
-			integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
-			crossorigin="anonymous"
-		>
-	</head>
-	<body>
-		<main role="main" class="container">
-			<table class="table table-striped">
-				<thead class="thead-dark">
-					<tr>
-						<th>IMDb ID</th>
-						<th>Plex</th>
-						<th>MetaDB</th>
-					</tr>
-				</thead>
-			<tbody>
-`); err != nil {
+	if err = tmpl.ExecuteTemplate(b, "prefix", nil); err != nil {
 		return err
 	}
 
 	var mutex sync.Mutex
 
-	err = withThreads(func(ctx context.Context, queue chan plex.Metadata) error {
-		return produceMoviesMetadata(ctx, connection, queue)
-	}, func(ctx context.Context, queue chan plex.Metadata, s *ysmrr.Spinner) error {
-		for job := range queue {
-			imdbID := getImdbID(job)
-
-			if imdbID == "" {
-				continue
-			}
-
-			metadbUrl, err := getPosterByImdbId(ctx, metadbClient, imdbID, s)
-
-			if ctx.Err() != nil {
+	err = concurrency.WithThreads(ctx, plex.NewMoviesProducer(plexClient), func(ctx context.Context, queue chan *plex.Metadata, s *ysmrr.Spinner) error {
+		for {
+			select {
+			case <-ctx.Done():
 				return ctx.Err()
+			case m, ok := <-queue:
+				if !ok {
+					return nil
+				}
+
+				s.UpdateMessage(m.Title)
+
+				if err = compareMovie(ctx, m, b, &mutex, httpClient, metadbClient, plexClient); err != nil {
+					return err
+				}
 			}
-
-			if err != nil {
-				return err
-			}
-
-			if metadbUrl == "" {
-				continue
-			}
-
-			metadbPath, err := downloadOrCache(client.Get, cli.CacheBasePath, metadbUrl)
-
-			if err != nil {
-				return err
-			}
-
-			s.UpdateMessagef("%s: Downloading current poster from Plex...", imdbID)
-			plexPath, err := getPosterByMetadata(connection, cli.CacheBasePath, job)
-
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-
-			if err != nil {
-				return err
-			}
-
-			s.UpdateMessagef("%s: Comparing poster checksums...", imdbID)
-			metadbHash, err := hashFile(metadbPath)
-
-			if err != nil {
-				return err
-			}
-
-			plexHash, err := hashFile(plexPath)
-
-			if err != nil {
-				return err
-			}
-
-			if plexHash == metadbHash {
-				continue
-			}
-
-			s.UpdateMessagef("%s: Waiting for other threads...", imdbID)
-			mutex.Lock()
-			s.UpdateMessagef("%s: Writing comparison to disk...", imdbID)
-
-			if _, err = fmt.Fprintf(b, `
-<tr>
-	<td>%s</td>
-	<td><img width=300 src="file://%s"></td>
-	<td><img width=300 src="file://%s"></td>
-</tr>
-`, imdbID, plexPath, metadbPath); err != nil {
-				return err
-			}
-			mutex.Unlock()
 		}
+	}, c.Threads)
 
+	if err = tmpl.ExecuteTemplate(b, "suffix", nil); err != nil {
+		return err
+	}
+
+	if err = b.Flush(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *sync.Mutex, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) (err error) {
+	imdbId := plex.ImdbID(m)
+
+	if imdbId == "" {
 		return nil
-	}, cli.Threads)
+	}
 
-	_, err2 := b.WriteString("</tbody></table></main></body></html>")
+	posterUrl, err := metadbClient.PosterByImdbId(ctx, imdbId)
 
 	if err != nil {
 		return err
 	}
 
-	return err2
-}
+	if posterUrl == "" {
+		return nil
+	}
 
-func hashFile(file string) (hash string, err error) {
-	f, err := os.Open(file)
+	posterrResponse, err := httpClient.Get(ctx, posterUrl)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	defer func() {
-		err = errors.Join(f.Close(), err)
+		err = errors.Join(err, posterrResponse.Body.Close())
 	}()
 
-	data, err := io.ReadAll(f)
+	posterrData, err := io.ReadAll(posterrResponse.Body)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
+	plexResponse, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
+
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = errors.Join(err, plexResponse.Body.Close())
+	}()
+
+	plexData, err := io.ReadAll(plexResponse.Body)
+
+	if err != nil {
+		return err
+	}
+
+	if bytes.Equal(posterrData, plexData) {
+		return nil
+	}
+
+	mutex.Lock()
+
+	err = tmpl.ExecuteTemplate(b, "loop", tmplData{
+		ImdbId:         imdbId,
+		PlexDataUrl:    template.URL(dataurl.New(plexData, plexResponse.Header.Get("Content-Type")).String()),
+		PosterrDataUrl: template.URL(dataurl.New(posterrData, posterrResponse.Header.Get("Content-Type")).String()),
+	})
+
+	mutex.Unlock()
+
+	return err
 }

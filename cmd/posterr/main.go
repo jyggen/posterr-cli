@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/jyggen/posterr-cli/internal/cmd"
+	"github.com/jyggen/posterr-cli/internal/cmd/compare"
 	"github.com/jyggen/posterr-cli/internal/cmd/preview"
 	"github.com/jyggen/posterr-cli/internal/cmd/update"
 	"github.com/jyggen/posterr-cli/internal/cmd/version"
@@ -20,21 +21,13 @@ const applicationName = "posterr"
 const defaultTimeout = 10 * time.Second
 
 type cli struct {
-	//Compare *compareCmd `cmd:"" help:""`
+	Compare *compare.Command `cmd:"" help:""`
 	Preview *preview.Command `cmd:"" help:""`
 	Update  *update.Command  `cmd:"" help:""`
 	Version *version.Command `cmd:"" help:""`
 }
 
 func main() {
-	cacheDir, _ := os.UserCacheDir()
-	command := cli{}
-	kongCtx := kong.Parse(&command, kong.Name(applicationName), kong.UsageOnError(), kong.Vars{
-		"cache":   filepath.Join(cacheDir, applicationName),
-		"threads": strconv.Itoa(cmd.MaxThreads),
-		"timeout": defaultTimeout.String(),
-	})
-
 	ctx, cancel := context.WithCancel(context.Background())
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
@@ -44,6 +37,13 @@ func main() {
 		cancel()
 	}()
 
-	kongCtx.BindTo(ctx, (*context.Context)(nil))
+	cacheDir, _ := os.UserCacheDir()
+	command := cli{}
+	kongCtx := kong.Parse(&command, kong.Name(applicationName), kong.UsageOnError(), kong.Vars{
+		"cache":   filepath.Join(cacheDir, applicationName),
+		"threads": strconv.Itoa(cmd.MaxThreads),
+		"timeout": defaultTimeout.String(),
+	}, kong.BindTo(ctx, (*context.Context)(nil)))
+
 	kongCtx.FatalIfErrorf(kongCtx.Run())
 }

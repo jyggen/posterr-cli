@@ -22,14 +22,7 @@ func NewCachingMiddleware(cache *Cache) internalhttp.MiddlewareFunc {
 				return nil, err
 			}
 
-			h := sha256.New()
-			_, err = h.Write(cacheKey)
-
-			if err != nil {
-				return nil, err
-			}
-
-			cacheKey = []byte(fmt.Sprintf("%x", h.Sum(nil)))
+			cacheKey = []byte(fmt.Sprintf("%x", sha256.Sum256(cacheKey)))
 			v, err := cache.Get(cacheKey)
 
 			if err == nil {
