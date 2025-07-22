@@ -10,7 +10,7 @@ This command will compare the posters suggested by MetaDB against the local and 
 that would be updated by the `update` command. 
 
 ```
-posterr compare <plex-base-url> <plex-token> [flags]
+posterr compare --plex-base-url=<plex-base-url> --plex-token=<plex-token> [flags]
 ```
 
 ### Preview
@@ -27,7 +27,7 @@ This command will update all local posters with the posters suggested by MetaDB 
 from various sources.
 
 ```
-posterr update <plex-base-url> <plex-token> [flags]
+posterr update --plex-base-url=<plex-base-url> --plex-token=<plex-token> [flags]
 ```
 
 ## MetaDB
