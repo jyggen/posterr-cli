@@ -1,16 +1,13 @@
-package main
+package concurrency
 
 import (
 	"context"
-	"io"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
-
 	"github.com/chelnak/ysmrr"
 	"github.com/mattn/go-colorable"
 	"golang.org/x/sync/errgroup"
+	"io"
+	"os"
+	"runtime"
 )
 
 type consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner) error
@@ -24,21 +21,12 @@ func getSpinnerWriter() io.Writer {
 	return os.Stderr
 }
 
-func withThreads[T any](producer producerFunc[T], consumer consumerFunc[T], threadCount int) error {
-	queue := make(chan T, threadCount)
+func WithThreads[T any](ctx context.Context, producer producerFunc[T], consumer consumerFunc[T], threadCount int) error {
+	queue := make(chan T, threadCount-1)
 	sm := ysmrr.NewSpinnerManager(ysmrr.WithWriter(getSpinnerWriter()))
-	ctx, cancel := context.WithCancel(context.Background())
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		<-sig
-		cancel()
-	}()
-
 	wg, ctx := errgroup.WithContext(ctx)
 
-	for i := 1; i <= threadCount; i++ {
+	for i := 1; i < threadCount; i++ {
 		s := sm.AddSpinner("Waiting...")
 
 		wg.Go(func() error {
