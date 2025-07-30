@@ -17,7 +17,9 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+  - main: ./cmd/posterr
+    binary: posterr
+    env:
       - CGO_ENABLED=0
     flags:
       - -trimpath
@@ -26,7 +28,7 @@ builds:
       - windows
       - darwin
     ldflags:
-      - -s -w -X "main.version={{.Version}}"
+      - -s -w -X "github.com/jyggen/posterr-cli/internal.version={{.Version}}"
     mod_timestamp: "{{.CommitTimestamp}}"
 
 archives:
