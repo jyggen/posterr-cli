@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/go:latest@sha256:2035c1a00329b02640d83bdb68306ff3f6d40316b1a0cd74e11554f0830a46fa AS builder
+FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/go:latest@sha256:98f013454e586ce641e193214930620f092081a5ca19275e96b9599e97c3ae7a AS builder
 ARG TARGETOS
 ARG TARGETARCH
 COPY . /app
