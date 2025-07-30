@@ -46,17 +46,17 @@ archives:
 
 dockers:
   - image_templates:
-      - "ghcr.io/jyggen/posterr:{{ .Tag }}-amd64"
-      - "ghcr.io/jyggen/posterr:v{{ .Major }}-amd64"
-      - "ghcr.io/jyggen/posterr:latest-amd64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:{{ .Tag }}-amd64"
+      - "{{ if not .Prerelease }}ghcr.io/jyggen/{{.ProjectName}}:v{{ .Major }}-amd64{{ end }}"
+      - "{{ if not .Prerelease }}ghcr.io/jyggen/{{.ProjectName}}:latest-amd64{{ end }}"
     use: buildx
     build_flag_templates:
       - "--pull"
       - "--platform=linux/amd64"
   - image_templates:
-      - "ghcr.io/jyggen/posterr:{{ .Tag }}-arm64"
-      - "ghcr.io/jyggen/posterr:v{{ .Major }}-arm64"
-      - "ghcr.io/jyggen/posterr:latest-arm64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:{{ .Tag }}-arm64"
+      - "{{ if not .Prerelease }}ghcr.io/jyggen/{{.ProjectName}}:v{{ .Major }}-arm64{{ end }}"
+      - "{{ if not .Prerelease }}ghcr.io/jyggen/{{.ProjectName}}:latest-arm64{{ end }}"
     use: buildx
     build_flag_templates:
       - "--pull"
@@ -64,18 +64,20 @@ dockers:
     goarch: arm64
 
 docker_manifests:
-  - name_template: "ghcr.io/jyggen/posterr:{{ .Tag }}"
+  - name_template: "ghcr.io/jyggen/{{.ProjectName}}:{{ .Tag }}"
     image_templates:
-      - "ghcr.io/jyggen/posterr:{{ .Tag }}-amd64"
-      - "ghcr.io/jyggen/posterr:{{ .Tag }}-arm64"
-  - name_template: "ghcr.io/jyggen/posterr:v{{ .Major }}"
+      - "ghcr.io/jyggen/{{.ProjectName}}:{{ .Tag }}-amd64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/jyggen/{{.ProjectName}}:v{{ .Major }}"
     image_templates:
-      - "ghcr.io/jyggen/posterr:v{{ .Major }}-amd64"
-      - "ghcr.io/jyggen/posterr:v{{ .Major }}-arm64"
-  - name_template: "ghcr.io/jyggen/posterr:latest"
+      - "ghcr.io/jyggen/{{.ProjectName}}:v{{ .Major }}-amd64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:v{{ .Major }}-arm64"
+    skip_push: auto
+  - name_template: "ghcr.io/jyggen/{{.ProjectName}}:latest"
     image_templates:
-      - "ghcr.io/jyggen/posterr:latest-amd64"
-      - "ghcr.io/jyggen/posterr:latest-arm64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:latest-amd64"
+      - "ghcr.io/jyggen/{{.ProjectName}}:latest-arm64"
+    skip_push: auto
 
 changelog:
   sort: asc
@@ -83,6 +85,9 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+release:
+  prerelease: auto
 
 announce:
   discord:
