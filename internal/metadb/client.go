@@ -24,9 +24,27 @@ func NewClient(baseUrl string, client *internalhttp.Client) *Client {
 }
 
 func (c *Client) CheckConnectivity(ctx context.Context) error {
-	_, err := c.client.Get(ctx, fmt.Sprintf("%s/_/%s", c.baseUrl, rand.Text()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/_/%s", c.baseUrl, rand.Text()), nil)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	res, err := c.client.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	if err = res.Body.Close(); err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+
+	return nil
 }
 
 func (c *Client) PosterByImdbId(ctx context.Context, imdbId string) (string, error) {
@@ -35,8 +53,7 @@ func (c *Client) PosterByImdbId(ctx context.Context, imdbId string) (string, err
 		case <-ctx.Done():
 			return "", ctx.Err()
 		default:
-			//updateMessagef(s, "%s: Checking MetaDB for the best poster available...", imdbId)
-			req, err := http.NewRequestWithContext(ctx, http.MethodHead, fmt.Sprintf("%s/imdb/%s", c.baseUrl, imdbId), nil)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/imdb/%s", c.baseUrl, imdbId), nil)
 
 			if err != nil {
 				return "", err
@@ -54,10 +71,8 @@ func (c *Client) PosterByImdbId(ctx context.Context, imdbId string) (string, err
 
 			switch res.StatusCode {
 			case http.StatusAccepted:
-				//updateMessagef(s, "%s: Waiting for MetaDB to scour the internet for available posters...", imdbId)
 				sleep(ctx, getRetryAfter(res))
 			case http.StatusServiceUnavailable:
-				//updateMessagef(s, "%s: Waiting for MetaDB's servers to catch up...", imdbId)
 				sleep(ctx, getRetryAfter(res))
 			case http.StatusNotFound:
 				return "", nil

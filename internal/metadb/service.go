@@ -10,10 +10,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/jyggen/posterr-cli/internal/http"
+	internalhttp "github.com/jyggen/posterr-cli/internal/http"
 	"github.com/miekg/dns"
 	"iter"
 	"math/rand"
+	"net/http"
 	"slices"
 	"strings"
 )
@@ -23,7 +24,7 @@ const svcbName = "posters.metadb.info."
 //go:embed public.pem
 var publicKey []byte
 
-func NewClientFromServiceDiscovery(ctx context.Context, dnsResolver string, client *http.Client) (*Client, error) {
+func NewClientFromServiceDiscovery(ctx context.Context, dnsResolver string, client *internalhttp.Client) (*Client, error) {
 	seq, err := findRemoteService(dnsResolver)
 
 	if err != nil {
@@ -49,7 +50,13 @@ func NewClientFromServiceDiscovery(ctx context.Context, dnsResolver string, clie
 	return nil, errors.New("all remote services are unavailable")
 }
 
-func withPublicKeyVerification(publicKey []byte) (http.Option, error) {
+var unverifiableStatusCodes = []int{
+	http.StatusBadGateway,
+	http.StatusGatewayTimeout,
+	http.StatusInternalServerError,
+}
+
+func withPublicKeyVerification(publicKey []byte) (internalhttp.Option, error) {
 	block, _ := pem.Decode(publicKey)
 
 	if block == nil {
@@ -64,12 +71,16 @@ func withPublicKeyVerification(publicKey []byte) (http.Option, error) {
 
 	publicKey = pk.(ed25519.PublicKey)
 
-	return http.WithMiddleware(func(next http.Middleware) http.Middleware {
+	return internalhttp.WithMiddleware(func(next internalhttp.Middleware) internalhttp.Middleware {
 		return func(req *http.Request) (*http.Response, error) {
 			res, innerErr := next(req)
 
 			if innerErr != nil {
 				return nil, innerErr
+			}
+
+			if slices.Contains(unverifiableStatusCodes, res.StatusCode) {
+				return res, nil
 			}
 
 			var b bytes.Buffer
@@ -103,7 +114,7 @@ func withPublicKeyVerification(publicKey []byte) (http.Option, error) {
 
 			return res, nil
 		}
-	}), nil
+	}, true), nil
 }
 
 func findRemoteService(dnsResolver string) (iter.Seq[string], error) {

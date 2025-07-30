@@ -15,9 +15,15 @@ func (f optionFunc) apply(client *Client) {
 	f(client)
 }
 
-func WithMiddleware(middleware MiddlewareFunc) Option {
+func WithMiddleware(middleware MiddlewareFunc, options ...bool) Option {
+	if len(options) > 0 && options[0] == true {
+		return optionFunc(func(c *Client) {
+			c.middlewares = append([]MiddlewareFunc{middleware}, c.middlewares...)
+		})
+	}
+
 	return optionFunc(func(c *Client) {
-		middleware.apply(c)
+		c.middlewares = append(c.middlewares, middleware)
 	})
 }
 
@@ -39,7 +45,6 @@ func WithUserAgent(userAgent string) Option {
 	return WithMiddleware(func(next Middleware) Middleware {
 		return func(req *http.Request) (*http.Response, error) {
 			req.Header.Set("User-Agent", userAgent)
-
 			return next(req)
 		}
 	})

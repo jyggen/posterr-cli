@@ -5,15 +5,17 @@ import (
 	"net/http"
 )
 
+var _ http.RoundTripper = (*Client)(nil)
+
 type Client struct {
-	client *http.Client
+	client      *http.Client
+	middlewares []MiddlewareFunc
 }
 
 func NewClient(options ...Option) *Client {
-	client := &Client{
-		client: &http.Client{
-			Transport: http.DefaultTransport,
-		},
+	client := &Client{}
+	client.client = &http.Client{
+		Transport: client,
 	}
 
 	return client.WithOptions(options...)
@@ -22,6 +24,7 @@ func NewClient(options ...Option) *Client {
 func (c *Client) clone() *Client {
 	clone := *c
 	clone.client = c.Client()
+	clone.client.Transport = &clone
 
 	return &clone
 }
@@ -40,6 +43,15 @@ func (c *Client) Client() *http.Client {
 	clone := *c.client
 
 	return &clone
+}
+
+func (c *Client) RoundTrip(req *http.Request) (*http.Response, error) {
+	next := http.DefaultTransport.RoundTrip
+	for _, m := range c.middlewares {
+		next = m(next)
+	}
+
+	return next(req)
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
