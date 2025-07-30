@@ -42,6 +42,39 @@ archives:
       - goos: windows
         formats: zip
 
+dockers:
+  - image_templates:
+      - "ghcr.io/jyggen/posterr:{{ .Tag }}-amd64"
+      - "ghcr.io/jyggen/posterr:v{{ .Major }}-amd64"
+      - "ghcr.io/jyggen/posterr:latest-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/jyggen/posterr:{{ .Tag }}-arm64"
+      - "ghcr.io/jyggen/posterr:v{{ .Major }}-arm64"
+      - "ghcr.io/jyggen/posterr:latest-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+    goarch: arm64
+
+docker_manifests:
+  - name_template: "ghcr.io/jyggen/posterr:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/jyggen/posterr:{{ .Tag }}-amd64"
+      - "ghcr.io/jyggen/posterr:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/jyggen/posterr:v{{ .Major }}"
+    image_templates:
+      - "ghcr.io/jyggen/posterr:v{{ .Major }}-amd64"
+      - "ghcr.io/jyggen/posterr:v{{ .Major }}-arm64"
+  - name_template: "ghcr.io/jyggen/posterr:latest"
+    image_templates:
+      - "ghcr.io/jyggen/posterr:latest-amd64"
+      - "ghcr.io/jyggen/posterr:latest-arm64"
+
 changelog:
   sort: asc
   filters:
