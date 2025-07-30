@@ -37,4 +37,6 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
+          DISCORD_WEBHOOK_ID: ${{ vars.DISCORD_WEBHOOK_ID }}
+          DISCORD_WEBHOOK_TOKEN: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
