@@ -16,7 +16,7 @@ func (f optionFunc) apply(client *Client) {
 }
 
 func WithMiddleware(middleware MiddlewareFunc, options ...bool) Option {
-	if len(options) > 0 && options[0] == true {
+	if len(options) > 0 && options[0] {
 		return optionFunc(func(c *Client) {
 			c.middlewares = append([]MiddlewareFunc{middleware}, c.middlewares...)
 		})
