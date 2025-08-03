@@ -10,7 +10,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/jyggen/go-plex-client v0.0.0-20240531124134-b23c71358946
 	github.com/mattn/go-colorable v0.1.14
-	github.com/miekg/dns v1.1.67
+	github.com/miekg/dns v1.1.68
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pquerna/cachecontrol v0.2.0
 	github.com/vincent-petithory/dataurl v1.0.0
