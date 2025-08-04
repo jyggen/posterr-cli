@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func NewMoviesProducer(plexClient *Client) func(context.Context, chan *plex.Metadata) error {
+func NewMoviesProducer(plexClient *Client, filters ...string) func(context.Context, chan *plex.Metadata) error {
 	return func(ctx context.Context, queue chan *plex.Metadata) error {
 		libraries, err := plexClient.Libraries()
 		if err != nil {
@@ -19,7 +19,7 @@ func NewMoviesProducer(plexClient *Client) func(context.Context, chan *plex.Meta
 				continue
 			}
 
-			content, innerErr := plexClient.LibraryContent(l.Key)
+			content, innerErr := plexClient.LibraryContent(l.Key, filters...)
 
 			if innerErr != nil {
 				return innerErr

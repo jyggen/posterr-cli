@@ -1,6 +1,7 @@
 package plex
 
 import (
+	"fmt"
 	"github.com/jyggen/go-plex-client"
 	"github.com/jyggen/posterr-cli/internal/http"
 	"io"
@@ -49,8 +50,14 @@ func (c *Client) Libraries() (iter.Seq[*plex.Directory], error) {
 	}, nil
 }
 
-func (c *Client) LibraryContent(libraryKey string) (iter.Seq[*plex.Metadata], error) {
-	content, err := c.plex.GetLibraryContent(libraryKey, "?includeGuids=1")
+func (c *Client) LibraryContent(libraryKey string, filters ...string) (iter.Seq[*plex.Metadata], error) {
+	filter := "?includeGuids=1"
+
+	for _, f := range filters {
+		filter += fmt.Sprintf("&%s", f)
+	}
+
+	content, err := c.plex.GetLibraryContent(libraryKey, filter)
 
 	if err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/chelnak/ysmrr"
 	"github.com/jyggen/posterr-cli/internal/cmd"
 	"github.com/jyggen/posterr-cli/internal/concurrency"
@@ -11,6 +12,7 @@ import (
 	"github.com/jyggen/posterr-cli/internal/metadb"
 	"github.com/jyggen/posterr-cli/internal/plex"
 	"io"
+	"time"
 )
 
 type Command struct {
@@ -20,10 +22,17 @@ type Command struct {
 	cmd.MetaDBConfig      `embed:""`
 	cmd.PlexConfig        `embed:""`
 	Force                 bool `help:""`
+	SinceDaysAgo          uint `help:""`
 }
 
 func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) error {
-	return concurrency.WithThreads(ctx, plex.NewMoviesProducer(plexClient), func(ctx context.Context, queue chan *plex.Metadata, s *ysmrr.Spinner) error {
+	var filters []string
+
+	if cmd.SinceDaysAgo > 0 {
+		filters = append(filters, fmt.Sprintf("addedAt>>=%s", time.Now().Add(-time.Duration(cmd.SinceDaysAgo)*24*time.Hour).Format(time.DateOnly)))
+	}
+
+	return concurrency.WithThreads(ctx, plex.NewMoviesProducer(plexClient, filters...), func(ctx context.Context, queue chan *plex.Metadata, s *ysmrr.Spinner) error {
 		for {
 			select {
 			case <-ctx.Done():
