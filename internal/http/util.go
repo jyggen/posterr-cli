@@ -27,6 +27,8 @@ func DumpResponseBodyToDisk(res *http.Response) (path string, err error) {
 		fileName = "posterr_*.jpg"
 	case "image/png":
 		fileName = "posterr_*.png"
+	case "image/webp":
+		fileName = "posterr_*.webp"
 	default:
 		return "", fmt.Errorf("unsupported content type: %s", res.Header.Get("Content-Type"))
 	}
