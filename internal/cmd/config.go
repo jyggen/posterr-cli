@@ -62,7 +62,7 @@ func (c *HTTPConfig) AfterApply(ctx *kong.Context, ca *cache.Cache) error {
 }
 
 type MetaDBConfig struct {
-	ApiURL      url.URL `default:"" help:""`
+	ApiURL      url.URL `default:"https://posters.metadb.info" help:""`
 	DnsResolver string  `default:"1.1.1.1:53" help:""`
 }
 
