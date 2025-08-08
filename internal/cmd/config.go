@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"runtime"
@@ -14,15 +15,15 @@ import (
 	"github.com/jyggen/posterr-cli/internal/plex"
 )
 
-var MaxThreads = (runtime.NumCPU() * 2) + 1
+var MaxWorkers = (runtime.NumCPU() * 2) + 1
 
 type CacheConfig struct {
-	CacheBasePath string `default:"${cache}" type:"path" help:""`
+	BasePath string `default:"${cache}" type:"path" help:"Where to store cache data between consecutive runs."`
 }
 
 func (c *CacheConfig) AfterApply(ctx *kong.Context) error {
 	ctx.FatalIfErrorf(ctx.BindSingletonProvider(func() (*cache.Cache, error) {
-		return cache.New(c.CacheBasePath)
+		return cache.New(c.BasePath)
 	}))
 	return nil
 }
@@ -32,26 +33,26 @@ func (c *CacheConfig) AfterRun(cache *cache.Cache) error {
 }
 
 type ConcurrencyConfig struct {
-	Threads int `default:"${threads}" help:""`
+	Workers int `default:"${workers}" help:"Number of workers to use. Must be a number between 2 and ${workers}."`
 }
 
-func (c *ConcurrencyConfig) Validate() error {
-	if c.Threads < 2 || c.Threads > MaxThreads {
-		return fmt.Errorf("threads must be a number between 2 and %d", MaxThreads)
+func (c *ConcurrencyConfig) AfterApply() error {
+	if c.Workers < 2 || c.Workers > MaxWorkers {
+		return fmt.Errorf("workers must be a number between 2 and %d", MaxWorkers)
 	}
 
 	return nil
 }
 
 type HTTPConfig struct {
-	HTTPTimeout time.Duration `help:"" default:"${timeout}"`
+	Timeout time.Duration `default:"${timeout}" help:"Maximum duration to wait for any HTTP request made. Must be specified in the string format of Go's time.Duration type."`
 }
 
 func (c *HTTPConfig) AfterApply(ctx *kong.Context, ca *cache.Cache) error {
 	ctx.FatalIfErrorf(ctx.BindSingletonProvider(func() (*http.Client, error) {
 		options := []http.Option{
 			http.WithMiddleware(cache.NewCachingMiddleware(ca)),
-			http.WithTimeout(c.HTTPTimeout),
+			http.WithTimeout(c.Timeout),
 			http.WithUserAgent(fmt.Sprintf("posterr/%s", internal.Version())),
 		}
 
@@ -61,31 +62,39 @@ func (c *HTTPConfig) AfterApply(ctx *kong.Context, ca *cache.Cache) error {
 	return nil
 }
 
-type MetaDBConfig struct {
-	ApiURL url.URL `default:"https://posters.metadb.info" help:""`
-}
-
-func (c *MetaDBConfig) AfterApply(kongCtx *kong.Context, client *http.Client) error {
-	kongCtx.FatalIfErrorf(kongCtx.BindSingletonProvider(func() (*metadb.Client, error) {
-		return metadb.NewClient(c.ApiURL.String(), client), nil
-	}))
-
-	return nil
-}
-
 type PlexConfig struct {
-	PlexBaseURL url.URL `required:"" name:"plex-base-url" help:""`
-	PlexToken   string  `required:"" name:"plex-token" help:""`
+	BaseURL url.URL `required:"" help:"Base URL of the Plex Media Server instance."`
+	Token   string  `required:"" help:"Token used to authenticate against the Plex Media Server instance."`
 }
 
 func (c *PlexConfig) AfterApply(ctx *kong.Context, client *http.Client, cacheSvc *cache.Cache) error {
+	if c.BaseURL.Scheme != "https" && c.BaseURL.Scheme != "http" {
+		return errors.New("plex base url must be a http(s) url")
+	}
+
 	ctx.FatalIfErrorf(ctx.BindSingletonProvider(func() (*plex.Client, error) {
-		plexClient, err := plex.NewClient(c.PlexBaseURL.String(), c.PlexToken, client, cacheSvc)
+		plexClient, err := plex.NewClient(c.BaseURL.String(), c.Token, client, cacheSvc)
 		if err != nil {
 			return nil, err
 		}
 
 		return plexClient, plexClient.CheckConnectivity()
+	}))
+
+	return nil
+}
+
+type PostersApiConfig struct {
+	ApiURL url.URL `default:"https://posters.metadb.info" help:"Base URL of the API used to fetch a movie's recommended poster."`
+}
+
+func (c *PostersApiConfig) AfterApply(kongCtx *kong.Context, client *http.Client) error {
+	if c.ApiURL.Scheme != "https" && c.ApiURL.Scheme != "http" {
+		return errors.New("api url must be a http(s) url")
+	}
+
+	kongCtx.FatalIfErrorf(kongCtx.BindSingletonProvider(func() (*metadb.Client, error) {
+		return metadb.NewClient(c.ApiURL.String(), client), nil
 	}))
 
 	return nil

@@ -25,12 +25,12 @@ func getSpinnerWriter() io.Writer {
 	return os.Stderr
 }
 
-func WithThreads[T any](ctx context.Context, producer producerFunc[T], consumer consumerFunc[T], threadCount int) error {
-	queue := make(chan T, threadCount-1)
+func WithThreads[T any](ctx context.Context, producer producerFunc[T], consumer consumerFunc[T], workerCount int) error {
+	queue := make(chan T, workerCount-1)
 	sm := ysmrr.NewSpinnerManager(ysmrr.WithWriter(getSpinnerWriter()))
 	wg, ctx := errgroup.WithContext(ctx)
 
-	for i := 1; i < threadCount; i++ {
+	for i := 1; i < workerCount; i++ {
 		s := sm.AddSpinner("Waiting...")
 
 		wg.Go(func() error {

@@ -32,12 +32,12 @@ type tmplData struct {
 }
 
 type Command struct {
-	cmd.CacheConfig       `embed:""`
-	cmd.ConcurrencyConfig `embed:""`
-	cmd.HTTPConfig        `embed:""`
-	cmd.MetaDBConfig      `embed:""`
-	cmd.PlexConfig        `embed:""`
-	OutputFile            string `arg:"" default:"-" type:"path" help:""`
+	Cache       *cmd.CacheConfig       `embed:"" prefix:"cache-"`
+	Concurrency *cmd.ConcurrencyConfig `embed:""`
+	HTTP        *cmd.HTTPConfig        `embed:"" prefix:"http-"`
+	Plex        *cmd.PlexConfig        `embed:"" prefix:"plex-"`
+	PostersApi  *cmd.PostersApiConfig  `embed:""`
+	OutputFile  string                 `arg:"" default:"-" type:"path" help:"Where to output the resulting HTML. Defaults to stdout."`
 }
 
 func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) (err error) {
@@ -85,7 +85,7 @@ func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClie
 				}
 			}
 		}
-	}, cmd.Threads)
+	}, cmd.Concurrency.Workers)
 
 	if err = tmpl.ExecuteTemplate(b, "suffix", nil); err != nil {
 		return err

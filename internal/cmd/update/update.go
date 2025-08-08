@@ -17,13 +17,13 @@ import (
 )
 
 type Command struct {
-	cmd.CacheConfig       `embed:""`
-	cmd.ConcurrencyConfig `embed:""`
-	cmd.HTTPConfig        `embed:""`
-	cmd.MetaDBConfig      `embed:""`
-	cmd.PlexConfig        `embed:""`
-	Force                 bool `help:""`
-	SinceDaysAgo          uint `help:""`
+	Cache        *cmd.CacheConfig       `embed:"" prefix:"cache-"`
+	Concurrency  *cmd.ConcurrencyConfig `embed:""`
+	HTTP         *cmd.HTTPConfig        `embed:"" prefix:"http-"`
+	Plex         *cmd.PlexConfig        `embed:"" prefix:"plex-"`
+	Posters      *cmd.PostersApiConfig  `embed:""`
+	Force        bool                   `help:"Force updates to Plex even if the poster hasn't changed."`
+	SinceDaysAgo uint                   `help:"Limit to movies there were added to Plex within the specified number of days."`
 }
 
 func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) error {
@@ -45,15 +45,15 @@ func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClie
 
 				s.UpdateMessage(m.RatingKey)
 
-				if err := updateMovie(ctx, m, httpClient, metadbClient, plexClient); err != nil {
+				if err := updateMovie(ctx, m, httpClient, metadbClient, plexClient, cmd.Force); err != nil {
 					return fmt.Errorf("%s: %w", m.RatingKey, err)
 				}
 			}
 		}
-	}, cmd.Threads)
+	}, cmd.Concurrency.Workers)
 }
 
-func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) error {
+func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client, force bool) error {
 	imdbId := plex.ImdbID(m)
 
 	if imdbId == "" {
@@ -91,7 +91,7 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 		return fmt.Errorf("unable to download plex poster: %w", err)
 	}
 
-	if bytes.Equal(posterrData, plexData) {
+	if !force && !bytes.Equal(posterrData, plexData) {
 		return nil
 	}
 

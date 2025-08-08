@@ -13,10 +13,10 @@ import (
 )
 
 type Command struct {
-	cmd.CacheConfig  `embed:""`
-	cmd.HTTPConfig   `embed:""`
-	cmd.MetaDBConfig `embed:""`
-	ImdbID           string `arg:"" name:"imdb-id" help:""`
+	Cache      *cmd.CacheConfig     `embed:"" prefix:"cache-"`
+	HTTP       *cmd.HTTPConfig      `embed:"" prefix:"http-"`
+	PostersApi cmd.PostersApiConfig `embed:""`
+	ImdbID     string               `arg:"" help:"IMDb ID of the movie to preview."`
 }
 
 func (cmd *Command) Run(ctx context.Context, httpClient *internalhttp.Client, metadbClient *metadb.Client) (err error) {
