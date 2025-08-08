@@ -6,6 +6,12 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"fmt"
+	"html/template"
+	"io"
+	"os"
+	"sync"
+
 	"github.com/chelnak/ysmrr"
 	"github.com/jyggen/posterr-cli/internal/cmd"
 	"github.com/jyggen/posterr-cli/internal/concurrency"
@@ -13,10 +19,6 @@ import (
 	"github.com/jyggen/posterr-cli/internal/metadb"
 	"github.com/jyggen/posterr-cli/internal/plex"
 	"github.com/vincent-petithory/dataurl"
-	"html/template"
-	"io"
-	"os"
-	"sync"
 )
 
 //go:embed compare.gohtml
@@ -105,7 +107,6 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 	}
 
 	posterUrl, err := metadbClient.PosterByImdbId(ctx, imdbId)
-
 	if err != nil {
 		return err
 	}
@@ -115,7 +116,6 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 	}
 
 	posterrResponse, err := httpClient.Get(ctx, posterUrl)
-
 	if err != nil {
 		return err
 	}
@@ -125,23 +125,11 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 	}()
 
 	posterrData, err := io.ReadAll(posterrResponse.Body)
-
 	if err != nil {
 		return err
 	}
 
-	plexResponse, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
-
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		err = errors.Join(err, plexResponse.Body.Close())
-	}()
-
-	plexData, err := io.ReadAll(plexResponse.Body)
-
+	plexData, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
 	if err != nil {
 		return err
 	}
@@ -154,7 +142,7 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 
 	err = tmpl.ExecuteTemplate(b, "loop", tmplData{
 		ImdbId:         imdbId,
-		PlexDataUrl:    template.URL(dataurl.New(plexData, plexResponse.Header.Get("Content-Type")).String()),
+		PlexDataUrl:    template.URL(dataurl.New(plexData, "image/jpeg").String()),
 		PosterrDataUrl: template.URL(dataurl.New(posterrData, posterrResponse.Header.Get("Content-Type")).String()),
 	})
 

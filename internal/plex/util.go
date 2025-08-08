@@ -2,9 +2,10 @@ package plex
 
 import (
 	"context"
-	"github.com/jyggen/go-plex-client"
 	"slices"
 	"strings"
+
+	"github.com/jyggen/go-plex-client"
 )
 
 func NewMoviesProducer(plexClient *Client, filters ...string) func(context.Context, chan *plex.Metadata) error {

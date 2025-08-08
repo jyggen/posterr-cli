@@ -5,14 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/chelnak/ysmrr"
 	"github.com/jyggen/posterr-cli/internal/cmd"
 	"github.com/jyggen/posterr-cli/internal/concurrency"
 	"github.com/jyggen/posterr-cli/internal/http"
 	"github.com/jyggen/posterr-cli/internal/metadb"
 	"github.com/jyggen/posterr-cli/internal/plex"
-	"io"
-	"time"
 )
 
 type Command struct {
@@ -83,23 +84,11 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 	r := io.TeeReader(posterrResponse.Body, b)
 
 	posterrData, err := io.ReadAll(r)
-
 	if err != nil {
 		return err
 	}
 
-	plexResponse, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
-
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		err = errors.Join(err, plexResponse.Body.Close())
-	}()
-
-	plexData, err := io.ReadAll(plexResponse.Body)
-
+	plexData, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
 	if err != nil {
 		return err
 	}
