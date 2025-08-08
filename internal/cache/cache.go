@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/dgraph-io/badger/v4"
 	"time"
+
+	"github.com/dgraph-io/badger/v4"
 )
 
-const meta byte = 1
+const meta byte = 2
 
 type Cache struct {
 	db *badger.DB
@@ -19,7 +20,6 @@ func New(path string) (*Cache, error) {
 	}
 
 	db, err := badger.Open(options)
-
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,6 @@ func (c *Cache) Get(key []byte) ([]byte, error) {
 
 	return v, c.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
-
 		if err != nil {
 			return err
 		}
