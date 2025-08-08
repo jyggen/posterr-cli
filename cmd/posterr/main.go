@@ -2,11 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/jyggen/posterr-cli/internal/cmd"
-	"github.com/jyggen/posterr-cli/internal/cmd/compare"
-	"github.com/jyggen/posterr-cli/internal/cmd/preview"
-	"github.com/jyggen/posterr-cli/internal/cmd/update"
-	"github.com/jyggen/posterr-cli/internal/cmd/version"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -14,11 +9,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jyggen/posterr-cli/internal/cmd"
+	"github.com/jyggen/posterr-cli/internal/cmd/compare"
+	"github.com/jyggen/posterr-cli/internal/cmd/preview"
+	"github.com/jyggen/posterr-cli/internal/cmd/update"
+	"github.com/jyggen/posterr-cli/internal/cmd/version"
+
 	"github.com/alecthomas/kong"
 )
 
-const applicationName = "posterr"
-const defaultTimeout = 10 * time.Second
+const (
+	applicationName = "posterr"
+	defaultTimeout  = 10 * time.Second
+)
 
 type cli struct {
 	Compare *compare.Command `cmd:"" help:""`
