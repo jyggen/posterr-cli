@@ -11,7 +11,6 @@ import (
 
 func DumpResponseBodyToDisk(res *http.Response) (path string, err error) {
 	body, err := io.ReadAll(res.Body)
-
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +33,6 @@ func DumpResponseBodyToDisk(res *http.Response) (path string, err error) {
 	}
 
 	f, err := os.CreateTemp(os.TempDir(), fileName)
-
 	if err != nil {
 		return "", err
 	}

@@ -10,13 +10,14 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	internalhttp "github.com/jyggen/posterr-cli/internal/http"
-	"github.com/miekg/dns"
 	"iter"
 	"math/rand"
 	"net/http"
 	"slices"
 	"strings"
+
+	internalhttp "github.com/jyggen/posterr-cli/internal/http"
+	"github.com/miekg/dns"
 )
 
 const svcbName = "posters.metadb.info."
@@ -26,7 +27,6 @@ var publicKey []byte
 
 func NewClientFromServiceDiscovery(ctx context.Context, dnsResolver string, client *internalhttp.Client) (*Client, error) {
 	seq, err := findRemoteService(dnsResolver)
-
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,6 @@ func withPublicKeyVerification(publicKey []byte) (internalhttp.Option, error) {
 	}
 
 	pk, err := x509.ParsePKIXPublicKey(block.Bytes)
-
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +124,6 @@ func findRemoteService(dnsResolver string) (iter.Seq[string], error) {
 	msg.Question[0] = dns.Question{Name: svcbName, Qtype: dns.TypeSVCB, Qclass: dns.ClassINET}
 	client := new(dns.Client)
 	res, _, err := client.Exchange(msg, dnsResolver)
-
 	if err != nil {
 		return nil, err
 	}

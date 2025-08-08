@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	internalhttp "github.com/jyggen/posterr-cli/internal/http"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	internalhttp "github.com/jyggen/posterr-cli/internal/http"
 )
 
 type Client struct {
@@ -25,13 +26,11 @@ func NewClient(baseUrl string, client *internalhttp.Client) *Client {
 
 func (c *Client) CheckConnectivity(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/_/%s", c.baseUrl, rand.Text()), nil)
-
 	if err != nil {
 		return err
 	}
 
 	res, err := c.client.Do(req)
-
 	if err != nil {
 		return err
 	}
@@ -54,13 +53,11 @@ func (c *Client) PosterByImdbId(ctx context.Context, imdbId string) (string, err
 			return "", ctx.Err()
 		default:
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/imdb/%s", c.baseUrl, imdbId), nil)
-
 			if err != nil {
 				return "", err
 			}
 
 			res, err := c.client.Do(req)
-
 			if err != nil {
 				return "", err
 			}
@@ -95,7 +92,6 @@ func getRetryAfter(res *http.Response) time.Duration {
 	}
 
 	sleepSeconds, err := strconv.Atoi(sleepHeader)
-
 	if err != nil {
 		return defaultSleepTime
 	}
