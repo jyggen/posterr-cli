@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"runtime"
@@ -63,16 +62,11 @@ func (c *HTTPConfig) AfterApply(ctx *kong.Context, ca *cache.Cache) error {
 }
 
 type MetaDBConfig struct {
-	ApiURL      url.URL `default:"https://posters.metadb.info" help:""`
-	DnsResolver string  `default:"1.1.1.1:53" help:""`
+	ApiURL url.URL `default:"https://posters.metadb.info" help:""`
 }
 
-func (c *MetaDBConfig) AfterApply(kongCtx *kong.Context, ctx context.Context, client *http.Client) error {
+func (c *MetaDBConfig) AfterApply(kongCtx *kong.Context, client *http.Client) error {
 	kongCtx.FatalIfErrorf(kongCtx.BindSingletonProvider(func() (*metadb.Client, error) {
-		if c.ApiURL.String() == "" {
-			return metadb.NewClientFromServiceDiscovery(ctx, c.DnsResolver, client)
-		}
-
 		return metadb.NewClient(c.ApiURL.String(), client), nil
 	}))
 
