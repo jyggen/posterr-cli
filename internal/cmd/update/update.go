@@ -91,7 +91,7 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 		return fmt.Errorf("unable to download plex poster: %w", err)
 	}
 
-	if !force && !bytes.Equal(posterrData, plexData) {
+	if !force && bytes.Equal(posterrData, plexData) {
 		return nil
 	}
 
