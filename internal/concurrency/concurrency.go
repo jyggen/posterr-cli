@@ -2,16 +2,20 @@ package concurrency
 
 import (
 	"context"
-	"github.com/chelnak/ysmrr"
-	"github.com/mattn/go-colorable"
-	"golang.org/x/sync/errgroup"
+	"errors"
 	"io"
 	"os"
 	"runtime"
+
+	"github.com/chelnak/ysmrr"
+	"github.com/mattn/go-colorable"
+	"golang.org/x/sync/errgroup"
 )
 
-type consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner) error
-type producerFunc[T any] func(ctx context.Context, queue chan T) error
+type (
+	consumerFunc[T any] func(ctx context.Context, queue chan T, s *ysmrr.Spinner) error
+	producerFunc[T any] func(ctx context.Context, queue chan T) error
+)
 
 func getSpinnerWriter() io.Writer {
 	if runtime.GOOS == "windows" {
@@ -34,8 +38,10 @@ func WithThreads[T any](ctx context.Context, producer producerFunc[T], consumer 
 
 			if err == nil {
 				s.CompleteWithMessage("Done.")
+			} else if errors.Is(err, context.Canceled) {
+				s.ErrorWithMessage("Canceled.")
 			} else {
-				s.ErrorWithMessagef("%s", err)
+				s.ErrorWithMessage(err.Error())
 			}
 
 			return err

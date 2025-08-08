@@ -43,10 +43,10 @@ func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClie
 					return nil
 				}
 
-				s.UpdateMessage(m.Title)
+				s.UpdateMessage(m.RatingKey)
 
 				if err := updateMovie(ctx, m, httpClient, metadbClient, plexClient); err != nil {
-					return err
+					return fmt.Errorf("%s: %w", m.RatingKey, err)
 				}
 			}
 		}
@@ -61,9 +61,8 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 	}
 
 	posterUrl, err := metadbClient.PosterByImdbId(ctx, imdbId)
-
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get poster url from metadb: %w", err)
 	}
 
 	if posterUrl == "" {
@@ -71,9 +70,8 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 	}
 
 	posterrResponse, err := httpClient.Get(ctx, posterUrl)
-
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to download poster: %w", err)
 	}
 
 	defer func() {
@@ -85,17 +83,21 @@ func updateMovie(ctx context.Context, m *plex.Metadata, httpClient *http.Client,
 
 	posterrData, err := io.ReadAll(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read poster data: %w", err)
 	}
 
 	plexData, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to download plex poster: %w", err)
 	}
 
 	if bytes.Equal(posterrData, plexData) {
 		return nil
 	}
 
-	return plexClient.UploadPoster(m.RatingKey, b)
+	if err = plexClient.UploadPoster(m.RatingKey, b); err != nil {
+		return fmt.Errorf("unable to upload poster to plex: %w", err)
+	}
+
+	return nil
 }

@@ -40,14 +40,13 @@ type Command struct {
 	OutputFile            string `arg:"" default:"-" type:"path" help:""`
 }
 
-func (c *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) (err error) {
+func (cmd *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient *metadb.Client, plexClient *plex.Client) (err error) {
 	var outputFile *os.File
 
-	if c.OutputFile == "-" {
+	if cmd.OutputFile == "-" {
 		outputFile = os.Stdout
 	} else {
-		outputFile, err = os.Create(c.OutputFile)
-
+		outputFile, err = os.Create(cmd.OutputFile)
 		if err != nil {
 			return err
 		}
@@ -79,14 +78,14 @@ func (c *Command) Run(ctx context.Context, httpClient *http.Client, metadbClient
 					return nil
 				}
 
-				s.UpdateMessage(m.Title)
+				s.UpdateMessage(m.RatingKey)
 
 				if err = compareMovie(ctx, m, b, &mutex, httpClient, metadbClient, plexClient); err != nil {
-					return err
+					return fmt.Errorf("%s: %w", m.RatingKey, err)
 				}
 			}
 		}
-	}, c.Threads)
+	}, cmd.Threads)
 
 	if err = tmpl.ExecuteTemplate(b, "suffix", nil); err != nil {
 		return err
@@ -108,7 +107,7 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 
 	posterUrl, err := metadbClient.PosterByImdbId(ctx, imdbId)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get poster url from metadb: %w", err)
 	}
 
 	if posterUrl == "" {
@@ -117,7 +116,7 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 
 	posterrResponse, err := httpClient.Get(ctx, posterUrl)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to download poster: %w", err)
 	}
 
 	defer func() {
@@ -126,12 +125,12 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 
 	posterrData, err := io.ReadAll(posterrResponse.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read poster data: %w", err)
 	}
 
 	plexData, err := plexClient.Thumbnail(m.RatingKey, m.Thumb)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to download plex poster: %w", err)
 	}
 
 	if bytes.Equal(posterrData, plexData) {
@@ -148,5 +147,9 @@ func compareMovie(ctx context.Context, m *plex.Metadata, b io.Writer, mutex *syn
 
 	mutex.Unlock()
 
-	return err
+	if err != nil {
+		return fmt.Errorf("unable to render template: %w", err)
+	}
+
+	return nil
 }

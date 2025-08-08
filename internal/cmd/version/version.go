@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+
 	"github.com/jyggen/posterr-cli/internal"
 )
 
