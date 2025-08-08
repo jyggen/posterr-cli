@@ -3,9 +3,6 @@ package concurrency
 import (
 	"context"
 	"errors"
-	"io"
-	"os"
-	"runtime"
 
 	"github.com/chelnak/ysmrr"
 	"github.com/mattn/go-colorable"
@@ -17,17 +14,9 @@ type (
 	producerFunc[T any] func(ctx context.Context, queue chan T) error
 )
 
-func getSpinnerWriter() io.Writer {
-	if runtime.GOOS == "windows" {
-		return colorable.NewColorableStderr()
-	}
-
-	return os.Stderr
-}
-
 func WithThreads[T any](ctx context.Context, producer producerFunc[T], consumer consumerFunc[T], workerCount int) error {
 	queue := make(chan T, workerCount-1)
-	sm := ysmrr.NewSpinnerManager(ysmrr.WithWriter(getSpinnerWriter()))
+	sm := ysmrr.NewSpinnerManager(ysmrr.WithWriter(colorable.NewColorableStderr()))
 	wg, ctx := errgroup.WithContext(ctx)
 
 	for i := 1; i < workerCount; i++ {
