@@ -1,6 +1,6 @@
 # Posterr CLI
 
-A CLI tool to update your Plex posters to the best<sup>[*](#disclaimer)</sup> posters available on the internet!
+A CLI tool to update your Plex posters to the [best](#disclaimer) posters available on the internet!
 
 ## Usage
 
