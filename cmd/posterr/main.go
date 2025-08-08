@@ -9,13 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alecthomas/kong"
 	"github.com/jyggen/posterr-cli/internal/cmd"
 	"github.com/jyggen/posterr-cli/internal/cmd/compare"
 	"github.com/jyggen/posterr-cli/internal/cmd/preview"
 	"github.com/jyggen/posterr-cli/internal/cmd/update"
-	"github.com/jyggen/posterr-cli/internal/cmd/version"
-
-	"github.com/alecthomas/kong"
 )
 
 const (
@@ -27,7 +25,7 @@ type cli struct {
 	Compare *compare.Command `cmd:"" help:""`
 	Preview *preview.Command `cmd:"" help:""`
 	Update  *update.Command  `cmd:"" help:""`
-	Version *version.Command `cmd:"" help:""`
+	Version cmd.VersionFlag  `help:""`
 }
 
 func main() {
@@ -44,8 +42,8 @@ func main() {
 	command := cli{}
 	kongCtx := kong.Parse(&command, kong.Name(applicationName), kong.UsageOnError(), kong.Vars{
 		"cache":   filepath.Join(cacheDir, applicationName),
-		"threads": strconv.Itoa(cmd.MaxThreads),
 		"timeout": defaultTimeout.String(),
+		"workers": strconv.Itoa(cmd.MaxWorkers),
 	}, kong.BindTo(ctx, (*context.Context)(nil)))
 
 	kongCtx.FatalIfErrorf(kongCtx.Run())
