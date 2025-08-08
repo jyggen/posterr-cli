@@ -22,9 +22,9 @@ const (
 )
 
 type cli struct {
-	Compare *compare.Command `cmd:"" help:""`
-	Preview *preview.Command `cmd:"" help:""`
-	Update  *update.Command  `cmd:"" help:""`
+	Compare *compare.Command `cmd:"" help:"Compare your current Plex posters against the best posters available and generate an HTML file with all posters that do not match'."`
+	Preview *preview.Command `cmd:"" help:"Open the best poster available for the movie specified in a new browser window."`
+	Update  *update.Command  `cmd:"" help:"Update any Plex poster that does not match the best poster available."`
 	Version cmd.VersionFlag  `help:""`
 }
 
