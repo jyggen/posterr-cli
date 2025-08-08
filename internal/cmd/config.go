@@ -3,15 +3,16 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"runtime"
+	"time"
+
 	"github.com/alecthomas/kong"
 	"github.com/jyggen/posterr-cli/internal"
 	"github.com/jyggen/posterr-cli/internal/cache"
 	"github.com/jyggen/posterr-cli/internal/http"
 	"github.com/jyggen/posterr-cli/internal/metadb"
 	"github.com/jyggen/posterr-cli/internal/plex"
-	"net/url"
-	"runtime"
-	"time"
 )
 
 var MaxThreads = (runtime.NumCPU() * 2) + 1
@@ -78,23 +79,20 @@ func (c *MetaDBConfig) AfterApply(kongCtx *kong.Context, ctx context.Context, cl
 	return nil
 }
 
-func (c *MetaDBConfig) Validate(client *metadb.Client, ctx context.Context) error {
-	return client.CheckConnectivity(ctx)
-}
-
 type PlexConfig struct {
 	PlexBaseURL url.URL `required:"" name:"plex-base-url" help:""`
 	PlexToken   string  `required:"" name:"plex-token" help:""`
 }
 
-func (c *PlexConfig) AfterApply(ctx *kong.Context, client *http.Client) error {
+func (c *PlexConfig) AfterApply(ctx *kong.Context, client *http.Client, cacheSvc *cache.Cache) error {
 	ctx.FatalIfErrorf(ctx.BindSingletonProvider(func() (*plex.Client, error) {
-		return plex.NewClient(c.PlexBaseURL.String(), c.PlexToken, client)
+		plexClient, err := plex.NewClient(c.PlexBaseURL.String(), c.PlexToken, client, cacheSvc)
+		if err != nil {
+			return nil, err
+		}
+
+		return plexClient, plexClient.CheckConnectivity()
 	}))
 
 	return nil
-}
-
-func (c *PlexConfig) Validate(client *plex.Client) error {
-	return client.CheckConnectivity()
 }
