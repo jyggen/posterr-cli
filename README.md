@@ -1,3 +1,5 @@
+> While this repository has been archived, the project is still being actively maintained over at [Codeberg](https://codeberg.org/jyggen/posterr).
+
 # Posterr CLI
 
 A CLI tool to update your Plex posters to the [best](#disclaimer) posters available on the internet!
